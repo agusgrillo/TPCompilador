@@ -29,7 +29,6 @@ class Analizador(Lexer):
               MULT,
               DIV
               }
-    ignore = ' \t'
     def error(self, t):
         # 1. Informar el error léxico con la línea y el símbolo que falló
         print(f"Error Léxico (Línea {self.lineno}): Carácter inválido '{t.value[0]}' inesperado.")
@@ -41,6 +40,7 @@ class Analizador(Lexer):
     def SINGLEF_EXP_ERROR(self, t):
         print(f"Error Léxico (Línea {self.lineno}): Constante flotante mal formada '{t.value}'. Faltan dígitos en el exponente.")
         return None
+    ignore = ' \t'
     
     ignore_espacios = ' \t' # Ignorar espacios y tabs
     ignore_comentarios = r'//.*'  # Ignorar comentarios de una línea
