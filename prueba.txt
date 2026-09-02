@@ -1,0 +1,16 @@
+x = 2147483647$l
+y = 2147483648$l
+z = -1$l
+fcon_decimal = 1.2 
+fsin_decimal = 12.
+fcon_entera = 11.12
+fsin_entera = .25
+fcon_exponente = 12.4s4
+fsin_exponente = 12.4s
+fcon_exponente_positivo = 12.4s+4
+fcon_exponente_negativo = 12.4s-4
+hola_123 = 12$l
+hola$ = 12.1
+holas = 12.1s-4
+BeGiN
+
