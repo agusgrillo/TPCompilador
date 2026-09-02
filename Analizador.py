@@ -79,6 +79,7 @@ class Analizador(Lexer):
             t.value = 0.0 # Valor por defecto para recuperación de errores
             
         return t
+
     @_(r'\d+\$l')
     def LARGEINT(self, t):
         val_str = t.value[:-2]
@@ -91,6 +92,7 @@ class Analizador(Lexer):
             print(f"Error Léxico en Línea {self.lineno}: Constante entera fuera del rango permitido")
             return None
         return t
+
     @_(r'\"[^\"]*\"')
     def STRINGM(self, t):
         # Eliminamos las comillas dobles al inicio y al final
@@ -124,6 +126,8 @@ if __name__ == '__main__':
     if (x >= singlef 10.00)
     if (x > 200$l)
         begin
+            x = x - 1$l;
+            x = x + 1$l;
             pout("x es igual a 10");
         end
     letras = 
