@@ -40,8 +40,7 @@ class Analizador(Lexer):
     def SINGLEF_EXP_ERROR(self, t):
         print(f"Error Léxico (Línea {self.lineno}): Constante flotante mal formada '{t.value}'. Faltan dígitos en el exponente.")
         return None
-    
-    ignore_espacios = ' \t' # Ignorar espacios y tabs
+    ignore = ' \t' # Ignorar espacios y tabs
     ignore_comentarios = r'//.*'  # Ignorar comentarios de una línea
 
     @_(r'\n+')
