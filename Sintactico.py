@@ -15,6 +15,24 @@ class Sintactico(sly.Parser):
         self.estructuras_detectadas = []
         self.errores_sintacticos = []
 
+    @_('SINGLEF lista_variables PUNTOYCOMA')
+    def statement(self, p):
+        self.estructuras_detectadas.append(f"Línea {p.lineno}: Declaración de singlef para variables: {p.lista_variables}")
+        for var in p.lista_variables:
+            self.variables[var] = 0.0  # inicializamos las variables en 0.0
+        return f"Declaración de singlef: {p.lista_variables}"
+
+    @_('lista_variables COMA ID')
+    def lista_variables(self, p):
+        lista_actual = p.lista_variables
+        lista_actual.append(p.ID)
+        return lista_actual
+
+    @_('ID')
+    def lista_variables(self, p):
+        return [p.ID]
+    
+
     @_('ID ASIGN expr')
     def statement(self, p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}: Asignación")
@@ -41,6 +59,7 @@ class Sintactico(sly.Parser):
     @_('expr DIV expr')
     def expr(self, p):
         if p.expr1 == 0:
+            self.errores_sintacticos.append(f"Línea {p.lineno}: Error: División por cero.")
             raise ZeroDivisionError("Error: División por cero.")
         return p.expr0 / p.expr1
 
