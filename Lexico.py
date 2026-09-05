@@ -1,13 +1,14 @@
 from sly import Lexer
 import sys
 
-class Analizador(Lexer):
+class Lexico(Lexer):
     tokens = {ID,
-              LARGEINT,
+              LONGINT,
+              NUMBER,
               SINGLEF,
+              FLOAT,
               STRINGM,
               SCOMENT,
-              NUMERO,
               ASIGN,
               MAYOR,
               MENOR,
@@ -27,12 +28,19 @@ class Analizador(Lexer):
               MAS,
               MENOS,
               MULT,
-              DIV
+              DIV,
+              REPEAT,
+              UNTIL,
+              TYPEDEF,
+              IMPORT,FROM,EXPORT,TO,
+              TOSF
               }
+    def __init__(self):
+        self.errores_lexicos = []
+        self.tabla_simbolos = {} # Se recomienda una estructura dinámica como diccionario
     def error(self, t):
         # 1. Informar el error léxico con la línea y el símbolo que falló
-        print(f"Error Léxico (Línea {self.lineno}): Carácter inválido '{t.value[0]}' inesperado.")
-        
+        self.errores_lexicos.append(f"Línea {t.lineno}: Error léxico: Carácter inválido '{t.value[0]}'")
         # 2. Recuperación (Modo pánico): avanzar el índice para descartar el carácter y continuar
         self.index += 1
 
@@ -52,7 +60,7 @@ class Analizador(Lexer):
 
     
     @_(r'\d*\.\d+(?:s[+-]?\d+)?')
-    def SINGLEF(self, t):
+    def FLOAT(self, t):
         # La parte exponencial puede estar ausente, pero el '.' y los decimales son obligatorios.
         # Reemplazamos la 's' por 'e' para que Python pueda evaluarlo matemáticamente
         val_str = t.value.replace('s', 'e')
@@ -80,15 +88,15 @@ class Analizador(Lexer):
 
 
     @_(r'\d+\$l')
-    def LARGEINT(self, t):
+    def NUMBER(self, t):
         val_str = t.value[:-2]
         t.value = int(val_str)
         # Considerar el rango para 32 bits
     
-        limite_sup = 2147483647
+        limite= 2147483648
         #Aca no sabemos si tirar warning o error
-        if t.value > limite_sup:
-            print(f"Error Léxico en Línea {self.lineno}: Constante entera fuera del rango permitido")
+        if t.value > limite:
+            print(f"Error en Línea {self.lineno}: Constante entera fuera del rango permitido")
             return None
         return t
 
@@ -111,20 +119,28 @@ class Analizador(Lexer):
 
         # hacemos los casos especiales de las palabras reservadas
         palabras_reservadas = {
-            'if': 'IF', 'IF': 'IF',
-            #ponemos las 3 variantes
-            'end_if': 'END_IF', 'END_IF': 'END_IF','END_if': 'END_IF',
-            'else': 'ELSE', 'ELSE': 'ELSE',
-            'begin': 'BEGIN', 'BEGIN': 'BEGIN',
-            'end': 'END', 'END': 'END',
-            'pout': 'POUT', 'POUT': 'POUT',
-            'ret': 'RET', 'RET': 'RET',
-            'class': 'CLASS', 'CLASS': 'CLASS',
-            'function': 'FUNCTION', 'FUNCTION': 'FUNCTION',
-            'singlef': 'SINGLEF', 'SINGLEF': 'SINGLEF'
+            'IF': 'IF',
+            'END_IF': 'END_IF',
+            'ELSE': 'ELSE',
+            'BEGIN': 'BEGIN',
+            'END': 'END',
+            'POUT': 'POUT',
+            'RET': 'RET',
+            'CLASS': 'CLASS',
+            'FUNCTION': 'FUNCTION',
+            'SINGLEF': 'SINGLEF',
+            'REPEAT': 'REPEAT',
+            'UNTIL': 'UNTIL',
+            'TYPEDEF': 'TYPEDEF',
+            'IMPORT': 'IMPORT',
+            'FROM': 'FROM',
+            'EXPORT': 'EXPORT',
+            'TO': 'TO',
+            'TOSF': 'TOSF',
+            'LONGINT': 'LONGINT'
         }
-        if t.value in palabras_reservadas:
-            t.type = palabras_reservadas[t.value]
+        if t.value.upper() in palabras_reservadas:
+            t.type = palabras_reservadas[t.value.upper()]
             return t
         # Preguntar a los profes si para manejar que las palabras reservadas sean escritas solo con mayuscula o minuscula
         # y si se intercalan las puedo descartar
@@ -132,7 +148,7 @@ class Analizador(Lexer):
             print(f"Error Léxico (Línea {self.lineno}): Identificador '{t.value}' no puede tener mayúsculas.")
             return None
         return t
-    literals = { '(', ')', ';',',' }
+    literals = { '(', ')', ';',',','[',']' }
     MAYORIGUAL = r'>='
     MENORIGUAL = r'<='
     IGUAL      = r'=='
@@ -145,29 +161,4 @@ class Analizador(Lexer):
     MULT       = r'\*'
     DIV        = r'/'
 
-
-
-if __name__ == '__main__':
-    # 1. Verificamos que el usuario haya enviado el parámetro desde la consola
-    if len(sys.argv) < 2:
-        print("Error: Falta especificar el archivo de código fuente.")
-        print("Uso correcto: python Analizador.py <nombre_del_archivo>")
-        sys.exit(1)
-
-    # 2. Capturamos la ruta que el usuario eligió y pasó como parámetro
-    ruta_archivo = sys.argv[1]
-
-    # 3. Leemos el archivo
-    try:
-        with open(ruta_archivo, 'r', encoding='utf-8') as archivo:
-            data = archivo.read()
-    except FileNotFoundError:
-        print(f"Error: No se pudo encontrar el archivo '{ruta_archivo}'.")
-        sys.exit(1)
-
-    # 4. Inicializamos el analizador e imprimimos los tokens detectados
-    lexer = Analizador()
-    print(f"--- Iniciando Análisis Léxico para: {ruta_archivo} ---\n")
     
-    for tok in lexer.tokenize(data):
-        print(tok)
