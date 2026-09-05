@@ -13,3 +13,13 @@ hola_123 = 12$l
 hola$ = 12.1
 holas = 12.1s-4
 BeGiN
+LongInt
+Repeat
+UNTIl
+TypeDef
+import
+export
+from
+to
+tosf
+[]
