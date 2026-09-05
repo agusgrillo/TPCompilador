@@ -40,7 +40,8 @@ class Lexico(Lexer):
         self.tabla_simbolos = {} # Se recomienda una estructura dinámica como diccionario
     def error(self, t):
         # 1. Informar el error léxico con la línea y el símbolo que falló
-        self.errores_lexicos.append(f"Línea {t.lineno}: Error léxico: Carácter inválido '{t.value[0]}'")
+        print(f"Error Léxico (Línea {self.lineno}): Carácter inválido '{t.value[0]}' inesperado.")
+        
         # 2. Recuperación (Modo pánico): avanzar el índice para descartar el carácter y continuar
         self.index += 1
 
@@ -48,9 +49,7 @@ class Lexico(Lexer):
     def SINGLEF_EXP_ERROR(self, t):
         print(f"Error Léxico (Línea {self.lineno}): Constante flotante mal formada '{t.value}'. Faltan dígitos en el exponente.")
         return None
-    ignore = ' \t'
-    
-    ignore_espacios = ' \t' # Ignorar espacios y tabs
+    ignore = ' \t' # Ignorar espacios y tabs
     ignore_comentarios = r'//.*'  # Ignorar comentarios de una línea
 
     @_(r'\n+')
@@ -75,15 +74,13 @@ class Lexico(Lexer):
             t.value = 0.0 # Valor por defecto para recuperación de errores
             
         return t
-    # Manejo de errores léxicos para constantes flotantes mal formadas, Preguntar
-    # si esta bien que descarte el token y siga o como cortamos la ejecución
+
     @_(r'\d+\.(?:s[+-]?\d+)?')
     def SINGLEF_ERROR(self, t):
-        # Según el TP, la parte decimal es obligatoria[cite: 1, 4]
+        #la parte decimal es obligatoria
         # Si entra acá, es porque se escribió "12." o "12.s-5" en lugar de "12.0"
         print(f"Error Léxico (Línea {self.lineno}): Constante flotante mal formada '{t.value}'. La parte decimal es obligatoria.")
-        
-        # Como es un error léxico, aplicamos "Modo pánico" descartando el token[cite: 3, 5]
+        # Como es un error léxico, aplicamos "Modo pánico" descartando el token
         return None
 
 
@@ -93,7 +90,7 @@ class Lexico(Lexer):
         t.value = int(val_str)
         # Considerar el rango para 32 bits
     
-        limite= 2147483648
+        limite_sup = 2147483647
         #Aca no sabemos si tirar warning o error
         if t.value > limite:
             print(f"Error en Línea {self.lineno}: Constante entera fuera del rango permitido")
@@ -142,8 +139,6 @@ class Lexico(Lexer):
         if t.value.upper() in palabras_reservadas:
             t.type = palabras_reservadas[t.value.upper()]
             return t
-        # Preguntar a los profes si para manejar que las palabras reservadas sean escritas solo con mayuscula o minuscula
-        # y si se intercalan las puedo descartar
         if any(c.isupper() for c in t.value):
             print(f"Error Léxico (Línea {self.lineno}): Identificador '{t.value}' no puede tener mayúsculas.")
             return None
