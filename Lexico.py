@@ -138,7 +138,7 @@ class Lexico(Lexer):
             t.type = palabras_reservadas[t.value.upper()]
             return t
         if any(c.isupper() for c in t.value):
-            print(f"Error Léxico (Línea {self.lineno}): Identificador '{t.value}' no puede tener mayúsculas.")
+            self.errores_lexicos.append(f"Línea {self.lineno}: Error léxico: Identificador '{t.value}' no puede tener mayúsculas.")
             return None
         return t
     literals = { '(', ')', ';',',','[',']' }
