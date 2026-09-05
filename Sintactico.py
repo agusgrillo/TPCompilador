@@ -11,7 +11,7 @@ class Sintactico(sly.Parser):
     )
 
     def __init__(self):
-        self.variables = {}
+        self.tabla_de_simbolos = {}
         self.estructuras_detectadas = []
         self.errores_sintacticos = []
 
@@ -19,8 +19,15 @@ class Sintactico(sly.Parser):
     def statement(self, p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}: Declaración de singlef para variables: {p.lista_variables}")
         for var in p.lista_variables:
-            self.variables[var] = 0.0  # inicializamos las variables en 0.0
+            self.tabla_de_simbolos[var] = 0.0  # inicializamos las variables en 0.0
         return f"Declaración de singlef: {p.lista_variables}"
+
+    @_('LONGINT lista_variables PUNTOYCOMA')
+    def statement(self, p):
+        self.estructuras_detectadas.append(f"Línea {p.lineno}: Declaración de longint para variables: {p.lista_variables}")
+        for var in p.lista_variables:
+            self.tabla_de_simbolos[var] = 0  # inicializamos las variables en 0
+        return f"Declaración de longint: {p.lista_variables}"
 
     @_('lista_variables COMA ID')
     def lista_variables(self, p):
@@ -36,7 +43,7 @@ class Sintactico(sly.Parser):
     @_('ID ASIGN expr')
     def statement(self, p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}: Asignación")
-        self.variables[p.ID] = p.expr
+        self.tabla_de_simbolos[p.ID] = p.expr
         return f"{p.ID} = {p.expr}"
 
     @_('expr')
