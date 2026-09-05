@@ -40,14 +40,13 @@ class Lexico(Lexer):
         self.tabla_simbolos = {} # Se recomienda una estructura dinámica como diccionario
     def error(self, t):
         # 1. Informar el error léxico con la línea y el símbolo que falló
-        print(f"Error Léxico (Línea {self.lineno}): Carácter inválido '{t.value[0]}' inesperado.")
-        
+        self.errores_lexicos.append(f"Línea {t.lineno}: Error léxico: Carácter inválido '{t.value[0]}'")
         # 2. Recuperación (Modo pánico): avanzar el índice para descartar el carácter y continuar
         self.index += 1
 
     @_(r'\d*\.\d+s(?:[+-](?!\d)|(?![+-]|\d))')
     def SINGLEF_EXP_ERROR(self, t):
-        print(f"Error Léxico (Línea {self.lineno}): Constante flotante mal formada '{t.value}'. Faltan dígitos en el exponente.")
+        self.errores_lexicos.append(f"Línea {self.lineno}: Error léxico: Constante flotante mal formada '{t.value}'. Faltan dígitos en el exponente.")
         return None
     ignore = ' \t' # Ignorar espacios y tabs
     ignore_comentarios = r'//.*'  # Ignorar comentarios de una línea
@@ -70,7 +69,7 @@ class Lexico(Lexer):
         limite_sup = 3.40282347e+38
         
         if valor != 0.0 and (valor < limite_inf or valor > limite_sup):
-            print(f"Error Léxico (Línea {self.lineno}): Constante flotante '{t.value}' fuera de rango permitdo.")
+            self.errores_lexicos.append(f"Línea {self.lineno}: Error léxico: Constante flotante '{t.value}' fuera de rango permitdo.")
             t.value = 0.0 # Valor por defecto para recuperación de errores
             
         return t
@@ -79,7 +78,7 @@ class Lexico(Lexer):
     def SINGLEF_ERROR(self, t):
         #la parte decimal es obligatoria
         # Si entra acá, es porque se escribió "12." o "12.s-5" en lugar de "12.0"
-        print(f"Error Léxico (Línea {self.lineno}): Constante flotante mal formada '{t.value}'. La parte decimal es obligatoria.")
+        self.errores_lexicos.append(f"Línea {self.lineno}: Error léxico: Constante flotante mal formada '{t.value}'. La parte decimal es obligatoria.")
         # Como es un error léxico, aplicamos "Modo pánico" descartando el token
         return None
 
@@ -90,10 +89,10 @@ class Lexico(Lexer):
         t.value = int(val_str)
         # Considerar el rango para 32 bits
     
-        limite_sup = 2147483647
+        limite = 2147483647
         #Aca no sabemos si tirar warning o error
         if t.value > limite:
-            print(f"Error en Línea {self.lineno}: Constante entera fuera del rango permitido")
+            self.errores_lexicos.append(f"Línea {self.lineno}: Error léxico: Constante entera fuera del rango permitido")
             return None
         return t
 
@@ -110,8 +109,7 @@ class Lexico(Lexer):
     @_(r'[a-zA-Z][a-zA-Z0-9_]*')
     def ID(self, t):
         if len(t.value) > 22:
-            print(f"Warning: Identificador '{t.value}' excede el límite de 22 caracteres.")
-            print(f"Truncando a: '{t.value[:22]}'")
+            self.errores_lexicos.append(f"Línea {self.lineno}: Warning: Identificador '{t.value}' excede el límite de 22 caracteres.")
             t.value = t.value[:22]  # Truncar a 22 caracteres
 
         # hacemos los casos especiales de las palabras reservadas
