@@ -66,7 +66,8 @@ class Sintactico(sly.Parser):
         return p.sentencias_ejecutables
     
 
-    @_('ID ASIGN expr')
+    @_('ID ASIGN  expr',
+       'ID ASIGN_IGUAL expr')
     def sentencia_ejecutable(self, p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}: Asignación")
         self.tabla_de_simbolos[p.ID] = p.expr

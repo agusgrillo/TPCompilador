@@ -34,7 +34,8 @@ class Lexico(Lexer):
               UNTIL,
               TYPEDEF,
               IMPORT,FROM,EXPORT,TO,
-              TOSF
+              TOSF,
+              EXTENDS
               }
     def __init__(self):
         self.errores_lexicos = []
@@ -133,7 +134,8 @@ class Lexico(Lexer):
             'EXPORT': 'EXPORT',
             'TO': 'TO',
             'TOSF': 'TOSF',
-            'LONGINT': 'LONGINT'
+            'LONGINT': 'LONGINT',
+            'EXTENDS': 'EXTENDS'
         }
         if t.value.upper() in palabras_reservadas:
             t.type = palabras_reservadas[t.value.upper()]
@@ -143,17 +145,17 @@ class Lexico(Lexer):
             return None
         return t
     literals = { '(', ')', ';',',','[',']' }
-    MAYORIGUAL = r'>='
-    MENORIGUAL = r'<='
-    IGUAL      = r'=='
-    DIFERENTE  = r'!='
-    MAYOR      = r'>'
-    MENOR      = r'<'
-    ASIGN      = r':='
-    ASIGN2     = r'='
-    MENOS      = r'-'
-    MAS        = r'\+'
-    MULT       = r'\*'
-    DIV        = r'/'
+    MAYORIGUAL  = r'>='
+    MENORIGUAL  = r'<='
+    IGUAL       = r'=='
+    DIFERENTE   = r'!='
+    MAYOR       = r'>'
+    MENOR       = r'<'
+    ASIGN       = r':='
+    ASIGN_IGUAL = r'='
+    MENOS       = r'-'
+    MAS         = r'\+'
+    MULT        = r'\*'
+    DIV         = r'/'
 
     
