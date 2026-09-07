@@ -10,6 +10,7 @@ class Lexico(Lexer):
               STRINGM,
               SCOMENT,
               ASIGN,
+              ASIGN2,
               MAYOR,
               MENOR,
               MAYORIGUAL,
@@ -148,7 +149,8 @@ class Lexico(Lexer):
     DIFERENTE  = r'!='
     MAYOR      = r'>'
     MENOR      = r'<'
-    ASIGN      = r':=|='
+    ASIGN     = r':='
+    ASIGN2      = r'='
     MENOS      = r'-'
     MAS        = r'\+'
     MULT       = r'\*'

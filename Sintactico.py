@@ -41,7 +41,7 @@ class Sintactico(sly.Parser):
             self.tabla_de_simbolos[var] = 0.0  # inicializamos las variables en 0.0
         return f"Declaración de singlef: {p.lista_variables}"
 
-    @_('LONGINT lista_variables PUNTOYCOMA')
+    @_('LONGINT lista_variables ";"')
     def sentencia_declarativa(self, p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}: Declaración de longint para variables: {p.lista_variables}")
         for var in p.lista_variables:
