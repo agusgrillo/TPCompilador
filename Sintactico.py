@@ -15,15 +15,34 @@ class Sintactico(sly.Parser):
         self.estructuras_detectadas = []
         self.errores_sintacticos = []
 
+
+    # Definición de reglas de producción  
+    @_('ID sentencias_declarativas BEGIN sentencias_ejecutables END')
+    def programa(self, p):
+        self.estructuras_detectadas.append(f"Línea {p.lineno}: Estructura de Programa '{p.ID}'")
+        return ('PROGRAMA', p.ID, p.sentencias_declarativas, p.sentencias_ejecutables)
+
+    #Definición de reglas de producción para sentencias declarativas y ejecutables
+    #parte declarativa
+    @_('sentencia_declarativa')
+    def sentencias_declarativas(self, p):
+        return [p.sentencia_declarativa]
+
+    @_('sentencias_declarativas sentencia_declarativa')
+    def sentencias_declarativas(self, p):
+        p.sentencias_declarativas.append(p.sentencia_declarativa)
+        return p.sentencias_declarativas
+
+    
     @_('SINGLEF lista_variables PUNTOYCOMA')
-    def statement(self, p):
+    def sentencia_declarativa(self, p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}: Declaración de singlef para variables: {p.lista_variables}")
         for var in p.lista_variables:
             self.tabla_de_simbolos[var] = 0.0  # inicializamos las variables en 0.0
         return f"Declaración de singlef: {p.lista_variables}"
 
     @_('LONGINT lista_variables PUNTOYCOMA')
-    def statement(self, p):
+    def sentencia_declarativa(self, p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}: Declaración de longint para variables: {p.lista_variables}")
         for var in p.lista_variables:
             self.tabla_de_simbolos[var] = 0  # inicializamos las variables en 0
@@ -39,15 +58,22 @@ class Sintactico(sly.Parser):
     def lista_variables(self, p):
         return [p.ID]
     
+    #Fin de la parte declarativa
+    #Parte ejecutable
+    @_('sentencias_ejecutables sentencia_ejecutable')
+    def sentencias_ejecutables(self, p):
+        p.sentencias_ejecutables.append(p.sentencia_ejecutable)
+        return p.sentencias_ejecutables
+    
 
     @_('ID ASIGN expr')
-    def statement(self, p):
+    def sentencia_ejecutable(self, p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}: Asignación")
         self.tabla_de_simbolos[p.ID] = p.expr
         return f"{p.ID} = {p.expr}"
 
     @_('expr')
-    def statement(self, p):
+    def sentencia_ejecutable(self, p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}: Expresión")
         return p.expr
 
