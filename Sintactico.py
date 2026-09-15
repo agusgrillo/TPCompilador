@@ -83,6 +83,15 @@ class Sintactico(sly.Parser):
             p.ID,
             p.lista_valores
         )
+    @_('NUMBER')
+    def lista_valores(self, p):
+        return [p.NUMBER]
+
+    @_('lista_valores "," NUMBER')
+    def lista_valores(self, p):
+        p.lista_valores.append(p.NUMBER)
+        return p.lista_valores
+    
     #asignacion de tipo declarado del typedef
     @_('ID lista_variables ";"')
     def sentencia_declarativa(self, p):
@@ -305,6 +314,149 @@ class Sintactico(sly.Parser):
     def parametros_formales(self, p):
         p.parametros_formales.append((p.tipo, p.ID))
         return p.parametros_formales
+    #expresion de retorno
     @_('RET "(" expresion ")" ";"')
     def retorno(self, p):
+        self.estructuras_detectadas.append("Retorno de función")
         return ('RETORNO', p.expresion)
+
+    # invocacion
+    @_('ID "(" parametros_reales ")" orden_evaluacion')
+    def llamado_funcion(self,p):
+        self.estructuras_detectadas.append(f"Línea {p.lineno}: Invocacion a funcion {p.ID}")
+        return('LLAMADO_FUNCION',p.ID,p.parametros_reales)
+
+    @_('expresion')
+    def parametros_reales (self,p):
+        return[p.expresion]
+    @_('parametros_reales "," expresion')
+    def parametros_reales(self, p):
+        p.parametros_reales.append(p.expresion)
+        return p.parametros_reales
+
+    @_('"[" lista_valores "]"')
+    def orden_evaluacion(self, p):
+        return p.lista_valores
+
+    @_('') # Regla vacía porque el orden es opcional
+    def orden_evaluacion(self, p):
+        return None
+
+    #Clases
+    @_('CLASS ID BEGIN cuerpo_clase END ";"')
+    def sentencia_clase(self, p):
+        self.estructuras_detectadas.append(f"En linea {p.lineno}: CLASE {p.ID}")
+        return ('CLASE', 
+                p.ID, 
+                p.cuerpo_clase)
+
+    @_('CLASS ID IMPORT FROM lista_variables BEGIN cuerpo_clase END ";"')
+    def sentencia_clase (self,p):
+        self.estructuras_detectadas.append(f"En linea {p.lineno}: CLASE {p.ID}")
+        return ('CLASE_IMPORT', 
+                p.ID, 
+                p.lista_variables ,
+                p.cuerpo_clase)
+    
+    #Cuerpo de la clase
+    @_('declaracion_clase')
+    def cuerpo_clase(self, p):
+        return [p.declaracion_clase]
+
+    @_('cuerpo_clase declaracion_clase')
+    def cuerpo_clase(self, p):
+        p.cuerpo_clase.append(p.declaracion_clase)
+        return p.cuerpo_clase
+    #declaraciones de la clase
+    @_('atributo_clase')
+    def declaracion_clase(self, p):
+        return p.atributo_clase
+
+    @_('metodo_clase')
+    def declaracion_clase(self, p):
+        return p.metodo_clase
+
+    @_('sentencia_extends')
+    def declaracion_clase(self, p):
+        return p.sentencia_extends
+
+    #atributos de clase
+    @_('tipo ID ";"')
+    def atributo_clase(self, p):
+        return ('ATRIBUTO',
+                p.tipo,
+                p.ID)
+
+    @_('tipo ID EXPORT TO lista_variables ";"')
+    def atributo_clase(self, p):
+
+        return (
+            'ATRIBUTO_EXPORT',
+            p.tipo,
+            p.ID,
+            p.lista_variables
+        )
+    
+    #metodos
+    @_('tipo ID "(" lista_parametros_formales ")"BEGIN sentencias_ejecutables END ";"')
+    def metodo_clase (self, p):
+        self.estructuras_detectadas.append(f"En linea: {p.lineno}. Metodo '{p.ID}'")
+        return(
+            'METODO',
+            p.tipo,
+            p.ID,
+            p.lista_parametros_formales,
+            p.sentencias_ejecutables
+        )
+
+    @_('tipo ID "(" lista_parametros_formales ")" BEGIN sentencias_ejecutables END EXPORT TO lista_variables ";"')
+    def metodo_clase(self, p):
+
+        self.estructuras_detectadas.append(f"En linea: {p.lineno} Metodo exportado '{p.ID}'")
+        return (
+            'METODO_EXPORT',
+            p.tipo,
+            p.ID,
+            p.lista_parametros_formales,
+            p.sentencias_ejecutables,
+            p.lista_variables
+        )
+    @_('EXTENDS lista_variables ";"')
+    def sentencia_extends(self, p):
+
+        self.estructuras_detectadas.append(
+            f"En linea: {p.lineno}EXTENDS {p.lista_variables}"
+        )
+
+        return ('EXTENDS',p.lista_variables)
+  
+    @_('TOSF "(" expresion ")"')
+    def sentencia_conv(self, p):
+        self.estructuras_detectadas.append(
+            f"En linea:{p.lineno}, conversion TOSF"
+        )
+        return (
+            'TOSF',
+            p.expresion
+        )
+
+    #errores
+        def error(self, p):
+    
+            if p:
+    
+                mensaje = (
+                    f"Línea {p.lineno}: Error sintáctico. "
+                    f"Token inesperado '{p.type}' "
+                    f"con valor '{p.value}'."
+                )
+                self.errores_sintacticos.append(mensaje)
+                print(mensaje)
+            else:
+                mensaje = (
+                    "Error sintáctico: "
+                    "fin de archivo inesperado."
+                )
+                self.errores_sintacticos.append(mensaje)
+                print(mensaje)
+    
