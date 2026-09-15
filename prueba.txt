@@ -1,17 +1,71 @@
-// comentario
+mi_programa_exitoso
 
-x = 2147483647$l
-y = 2147483648$l
-z = -1$l
-fcon_decimal = 1.2 
-fsin_decimal = 12.
-fcon_entera = 11.12
-fsin_entera = .25
-fcon_exponente = 12.4s4
-fsin_exponente = 12.4s
-fcon_exponente_positivo = 12.4s+4
-fcon_exponente_negativo = 12.4s-4
-hola_123 = 12$l
-hola$ = 12.1
-holas = 12.1s-4
-BeGiN
+// ==========================================
+// BLOQUE DE DECLARACIONES
+// ==========================================
+
+// 1. Declaración de variables simples
+LONGINT variable_entera, contador;
+SINGLEF variable_flotante;
+FLOAT resultado;
+
+// 2. Declaración de Typedef (Tema 23)
+// Nota: Ajusta los números si tu token para arreglos no usa el sufijo $l
+TYPEDEF mis_estados = [1, 2, 3];
+
+// 3. Declaración de Clase (con herencia opcional vacía)
+CLASS MiClase BEGIN
+    LONGINT atributo_clase;
+END;
+
+// 4. Declaración de Función
+FLOAT FUNCTION calcular_doble(FLOAT parametro)
+    FLOAT temporal;
+BEGIN
+    temporal := parametro * 2.0;
+    RET(temporal);
+END;
+
+// ==========================================
+// BLOQUE DE EJECUCIÓN (BEGIN - END principal)
+// ==========================================
+BEGIN
+    
+    // 5. Asignaciones y constantes propias de tu Lexer
+    variable_entera := 15$l;
+    variable_flotante := 12.5s2;
+    resultado := 0.0;
+
+    // 6. Sentencia de Salida
+    POUT("Iniciando la prueba del analizador sintactico exitosa");
+
+    // 7. Expresiones matemáticas complejas
+    resultado := variable_entera + 5$l * 2$l;
+
+    // 8. Estructura IF - ELSE
+    IF (resultado >= 10.0)
+    BEGIN
+        POUT("El resultado es mayor o igual a 10");
+        resultado := resultado - 1.0;
+    END
+    ELSE
+    BEGIN
+        POUT("El resultado es menor");
+    END
+    END_IF;
+
+    // 9. Estructura REPEAT UNTIL
+    contador := 0$l;
+    REPEAT
+    BEGIN
+        contador := contador + 1$l;
+    END
+    UNTIL (contador == 5$l);
+
+    // 10. Casting TOSF
+    resultado := TOSF(variable_entera);
+
+    // 11. Invocación de función (con orden de evaluación del Tema 20)
+    resultado := calcular_doble(resultado) [1, 2];
+
+END
