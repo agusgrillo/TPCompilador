@@ -91,7 +91,7 @@ class Lexico(Lexer):
         t.value = int(val_str)
         # Considerar el rango para 32 bits
     
-        limite = 2147483647
+        limite = 2147483648
         #Aca no sabemos si tirar warning o error
         if t.value > limite:
             self.errores_lexicos.append(f"Línea {self.lineno}: Error léxico: Constante entera fuera del rango permitido")
