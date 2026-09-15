@@ -10,7 +10,7 @@ class Lexico(Lexer):
               STRINGM,
               SCOMENT,
               ASIGN,
-              ASIGN2,
+              ASIGN_IGUAL,
               MAYOR,
               MENOR,
               MAYORIGUAL,
