@@ -7,7 +7,6 @@ mi_programa_exitoso
 // 1. Declaración de variables simples
 LONGINT variable_entera, contador;
 SINGLEF variable_flotante;
-FLOAT resultado;
 
 // 2. Declaración de Typedef (Tema 23)
 // Nota: Ajusta los números si tu token para arreglos no usa el sufijo $l
