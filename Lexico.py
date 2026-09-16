@@ -8,7 +8,6 @@ class Lexico(Lexer):
               SINGLEF,
               FLOAT,
               STRINGM,
-              SCOMENT,
               ASIGN,
               ASIGN_IGUAL,
               MAYOR,
