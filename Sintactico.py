@@ -242,6 +242,14 @@ class Sintactico(sly.Parser):
     def expresion(self, p):
         return ('OP_BINARIA', p[1], p.expresion, p.termino)
 
+    #Manejo falta de operando
+    @_('expresion MAS error',
+       'expresion MENOS error')
+    def expresion(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta operando en la expresión."
+        )
+        return ('OP_BINARIA', p[1], p.expresion, None)
     @_('termino')
     def expresion(self, p):
         return p.termino
@@ -250,7 +258,14 @@ class Sintactico(sly.Parser):
        'termino DIV factor')
     def termino(self, p):
         return ('OP_BINARIA', p[1], p.termino, p.factor)
-
+    #Manejo falta de operando
+    @_('termino MULT error',
+       'termino DIV error')
+    def termino(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta operando en la expresión."
+        )
+        return ('OP_BINARIA', p[1], p.termino, None)
     @_('factor')
     def termino(self, p):
         return p.factor
@@ -272,7 +287,14 @@ class Sintactico(sly.Parser):
        'expresion_estricta MENOS termino_estricto')
     def expresion_estricta (self,p):
         return('OP_BINARIA',p[1],p.expresion_estricta,p.termino_estricto)
-
+    #Manejo falta de operando
+    @_('expresion_estricta MAS error',
+       'expresion_estricta MENOS error')
+    def expresion_estricta(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta operando en la expresión."
+        )
+        return ('OP_BINARIA', p[1], p.expresion_estricta, None)
     @_('termino_estricto')
     def expresion_estricta(self,p):
         return(p.termino_estricto)
@@ -285,7 +307,14 @@ class Sintactico(sly.Parser):
                 self.errores_sintacticos.append(f"Línea {p.lineno}: Error: División por cero.")
                 raise ZeroDivisionError("Error: División por cero.")
         return('OP_BINARIA',p[1],p.termino_estricto,p.factor_estricto)
-
+    #Manejo falta de operando
+    @_('termino_estricto MULT error',
+       'termino_estricto DIV error')
+    def termino_estricto(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta operando en la expresión."
+        )
+        return ('OP_BINARIA', p[1], p.termino_estricto, None)
     @_('factor_estricto')
     def termino_estricto (self , p):
         return(p.factor_estricto)
@@ -616,20 +645,26 @@ class Sintactico(sly.Parser):
     def error(self, p):
 
         if p:
+            if p.type in {'MAS', 'MENOS', 'MULT', 'DIV'}:
+                self.errores_sintacticos.append(
+                    f"Línea {p.lineno}: Error Sintáctico: "
+                    "Falta operando en la expresión."
+                )
+            elif p.type != ';':
+                mensaje = (
+                    f"Línea {p.lineno}: Error sintáctico. "
+                    f"Token inesperado '{p.type}' "
+                    f"con valor '{p.value}'."
+                )
+                self.errores_sintacticos.append(mensaje)
+
             tokens_de_recuperacion = {
                 'BEGIN', 'END', 'IF', 'ELSE', 'END_IF', 'REPEAT', 'UNTIL',
                 'RET', 'TOSF', 'POUT', 'ID', 'LONGINT', 'SINGLEF',
-                'TYPEDEF', 'CLASS', 'EXTENDS', '(', ')', ','
+                'TYPEDEF', 'CLASS', 'EXTENDS', '(', ')', ',', ';'
             }
             if p.type in tokens_de_recuperacion:
                 return
-
-            mensaje = (
-                f"Línea {p.lineno}: Error sintáctico. "
-                f"Token inesperado '{p.type}' "
-                f"con valor '{p.value}'."
-            )
-            self.errores_sintacticos.append(mensaje)
 
             linea_error = p.lineno
             siguiente_token = next(self.tokens, None)
