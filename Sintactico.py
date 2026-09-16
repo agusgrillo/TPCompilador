@@ -392,6 +392,15 @@ class Sintactico(sly.Parser):
     @_('tipo ID')
     def parametros_formales(self, p):
         return [(p.tipo, p.ID)]
+
+    @_('tipo error')
+    def parametros_formales(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: "
+            "Falta el nombre del parámetro formal."
+        )
+        return [(p.tipo, None)]
+
     @_('parametros_formales "," tipo ID')
     def parametros_formales(self, p):
         p.parametros_formales.append((p.tipo, p.ID))
@@ -591,7 +600,7 @@ class Sintactico(sly.Parser):
             tokens_de_recuperacion = {
                 'BEGIN', 'END', 'IF', 'ELSE', 'END_IF', 'REPEAT', 'UNTIL',
                 'RET', 'TOSF', 'POUT', 'ID', 'LONGINT', 'SINGLEF',
-                'TYPEDEF', 'CLASS', 'EXTENDS', '('
+                'TYPEDEF', 'CLASS', 'EXTENDS', '(', ')', ','
             }
             if p.type in tokens_de_recuperacion:
                 return
