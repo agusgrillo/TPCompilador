@@ -294,7 +294,7 @@ class Sintactico(sly.Parser):
     @_('IF "(" condicion ")" bloque_control ELSE bloque_control END_IF ";"')
     def sentencia_if (self,p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}:Estructura IF-ELSE")
-        return ('IF-ELSE', p.condicion, p.bloque_control)
+        return ('IF-ELSE', p.condicion, p.bloque_control0, p.bloque_control1)
 
     #REPEAT UNTIL
     @_('REPEAT bloque_control UNTIL "(" condicion ")" ";"')
