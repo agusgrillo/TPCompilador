@@ -705,4 +705,15 @@ class Sintactico(sly.Parser):
             self.errores_sintacticos.append(f"Línea {p.lineno}: Error Sintáctico: Falta el delimitador 'END'.")
             return p.sentencias_ejecutables
 
-   
+    #falta operador
+    @_('expresion termino')
+    def expresion(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta operador en la expresión.")
+        return p.expresion
+
+    @_('termino factor')
+    def termino(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta operador en la expresión.")
+        return p.termino
