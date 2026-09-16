@@ -393,6 +393,11 @@ class Sintactico(sly.Parser):
     def parametros_formales(self, p):
         return [(p.tipo, p.ID)]
 
+    @_('parametros_formales "," tipo ID')
+    def parametros_formales(self, p):
+        p.parametros_formales.append((p.tipo, p.ID))
+        return p.parametros_formales
+
     @_('tipo error')
     def parametros_formales(self, p):
         self.errores_sintacticos.append(
@@ -400,10 +405,24 @@ class Sintactico(sly.Parser):
             "Falta el nombre del parámetro formal."
         )
         return [(p.tipo, None)]
-
-    @_('parametros_formales "," tipo ID')
+    #error falta tipo en param formal caso primero
+    @_('error ID')
     def parametros_formales(self, p):
-        p.parametros_formales.append((p.tipo, p.ID))
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: "
+            "Falta el tipo del parámetro formal."
+        )
+        return [(None, p.ID)]
+
+
+    #error te falta tipo param formal despues de la ,
+    @_('parametros_formales "," error ID')
+    def parametros_formales(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: "
+            "Falta el tipo del parámetro formal."
+        )
+        p.parametros_formales.append((None, p.ID))
         return p.parametros_formales
     #expresion de retorno
     @_('RET "(" expresion ")"')
