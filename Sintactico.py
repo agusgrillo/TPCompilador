@@ -3,7 +3,7 @@ from Lexico import Lexico
 
 class Sintactico(sly.Parser):
     tokens = Lexico.tokens
-
+    debugfile = 'parser.out'
     precedence = (
         ('left', 'MAS', 'MENOS'),
         ('left', 'MULT', 'DIV'),
@@ -15,12 +15,11 @@ class Sintactico(sly.Parser):
         self.estructuras_detectadas = []
         self.errores_sintacticos = []
 
-
     # Definición de reglas de producción  
-    @_('ID sentencias_declarativas BEGIN sentencias_ejecutables END')
+    @_('ID sentencias_declarativas bloque_delimitado')
     def programa(self, p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}: Estructura de Programa '{p.ID}'")
-        return ('PROGRAMA', p.ID, p.sentencias_declarativas, p.sentencias_ejecutables)
+        return ('PROGRAMA', p.ID, p.sentencias_declarativas, p.bloque_delimitado)
 
     #Definición de reglas de producción para sentencias declarativas y ejecutables
     #parte declarativa
@@ -35,36 +34,31 @@ class Sintactico(sly.Parser):
 
     @_('tipo lista_variables ";"')
     def sentencia_declarativa(self, p):
-
         for variable in p.lista_variables:
-
             if variable in self.tabla_de_simbolos:
                 self.errores_sintacticos.append(
                     f"Variable '{variable}' declarada más de una vez."
                 )
-
             else:
                 if p.tipo == 'LONGINT':
                     self.tabla_de_simbolos[variable] = {
                         'tipo': 'LONGINT',
                         'valor': 0
                     }
-
                 elif p.tipo == 'SINGLEF':
                     self.tabla_de_simbolos[variable] = {
                         'tipo': 'SINGLEF',
                         'valor': 0.0
                     }
-
         self.estructuras_detectadas.append(
             f"Declaración {p.tipo}: {p.lista_variables}"
         )
-
         return (
             'DECLARACION',
             p.tipo,
             p.lista_variables
         )
+    #manejo de errores: falta de ";" en las declaraciones
     #Funcion como declaracion
     @_('sentencia_funcion')
     def sentencia_declarativa(self, p):
@@ -83,6 +77,13 @@ class Sintactico(sly.Parser):
             p.ID,
             p.lista_valores
         )
+    #Manejo de errores: falta ;
+    @_('TYPEDEF ID ASIGN_IGUAL "[" lista_valores "]" error')
+    def sentencia_declarativa(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la sentencia TYPEDEF."
+        )
+        return ('TYPEDEF', p.ID, p.lista_valores)
     @_('NUMBER')
     def lista_valores(self, p):
         return [p.NUMBER]
@@ -95,15 +96,18 @@ class Sintactico(sly.Parser):
     #asignacion de tipo declarado del typedef
     @_('ID lista_variables ";"')
     def sentencia_declarativa(self, p):
-
         self.estructuras_detectadas.append(
             f"Declaración del tipo '{p.ID}': {p.lista_variables}"
         )
-        return (
-            'DECLARACION_TIPO_USUARIO',
-            p.ID,
-            p.lista_variables
+        return ('DECLARACION_TIPO_USUARIO', p.ID,p.lista_variables)
+    # TYPEDEF pero sin ";"
+    @_('ID lista_variables error')
+    def sentencia_declarativa(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la declaración de variables de tipo '{p.ID}'."
         )
+        return ('DECLARACION_TIPO_USUARIO', p.ID, p.lista_variables)
+
     #Declaracion de variables separadas por comas
     @_('lista_variables "," ID')
     def lista_variables(self, p):
@@ -115,6 +119,39 @@ class Sintactico(sly.Parser):
     def lista_variables(self, p):
         return [p.ID]
 
+    # Manejo de errores, falta de , en la declaracion
+    @_('tipo lista_variables error ";"')
+    def sentencia_declarativa(self, p):
+        lista_recuperada = list(p.lista_variables)
+        if hasattr(p.error, 'type') and p.error.type == 'ID':
+            lista_recuperada.append(p.error.value)
+
+        for variable in lista_recuperada:
+            if variable in self.tabla_de_simbolos:
+                self.errores_sintacticos.append(
+                    f"Variable '{variable}' declarada más de una vez."
+                )
+            elif p.tipo == 'LONGINT':
+                self.tabla_de_simbolos[variable] = {
+                    'tipo': 'LONGINT',
+                    'valor': 0
+                }
+            elif p.tipo == 'SINGLEF':
+                self.tabla_de_simbolos[variable] = {
+                    'tipo': 'SINGLEF',
+                    'valor': 0.0
+                }
+
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: "
+            f"Falta ',' en la declaración de variables."
+        )
+        return (
+            'DECLARACION',
+            p.tipo,
+            lista_recuperada
+        )
+    
     #declaracion de clases
     @_('sentencia_clase')
     def sentencia_declarativa(self, p):
@@ -140,11 +177,29 @@ class Sintactico(sly.Parser):
     @_('sentencia_ejecutable')
     def sentencias_ejecutables(self, p):
         return [p.sentencia_ejecutable]
+ # CUERPO O CONTENIDO DE SENTENCIAS EJECUTABLES (Sin el ';')
+    @_('asignacion',
+       'salida',
+       'llamado_funcion',
+       'sentencia_conv',
+       'retorno')
+    def sentencia_base(self, p):
+        return p[0]
 
-    #Asignacion
-    @_('asignacion ";"')
-    def sentencia_ejecutable(self,p):
-        return p.asignacion
+
+    # Caso correcto: Cualquier sentencia_base seguida de ';'
+    @_('sentencia_base ";"')
+    def sentencia_ejecutable(self, p):
+        return p.sentencia_base
+
+    # ERROR GENERAL: Falta de ';' en cualquier sentencia_base
+    @_('sentencia_base error')
+    def sentencia_ejecutable(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la sentencia."
+        )
+        return p.sentencia_base
+    
     #if
     @_('sentencia_if')
     def sentencia_ejecutable(self, p):
@@ -153,23 +208,6 @@ class Sintactico(sly.Parser):
     @_('sentencia_repeat')
     def sentencia_ejecutable(self, p):
         return p.sentencia_repeat
-    #pout
-    @_('salida ";"')
-    def sentencia_ejecutable(self, p):
-        return p.salida
-    
-    #llamado de funcion
-    @_('llamado_funcion ";"')
-    def sentencia_ejecutable(self, p):
-        return p.llamado_funcion
-    #tosf
-    @_('sentencia_conv ";"')
-    def sentencia_ejecutable(self, p):
-        return p.sentencia_conv
-    #retorno
-    @_('retorno')
-    def sentencia_ejecutable(self, p):
-        return p.retorno
 
     #ASIGNACIONES
 
@@ -281,19 +319,34 @@ class Sintactico(sly.Parser):
     def bloque_control(self, p):
         return [p.sentencia_ejecutable]
 
-    @_('BEGIN sentencias_ejecutables END')
+    @_('bloque_delimitado')
     def bloque_control(self, p):
-        return p.sentencias_ejecutables
+        return p.bloque_delimitado
 
     # Estructura IF
     @_('IF "(" condicion ")" bloque_control END_IF ";"')
     def sentencia_if (self,p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}:Estructura IF")
         return ('IF', p.condicion, p.bloque_control)
+    # Estructura IF sin ";"
+    @_('IF "(" condicion ")" bloque_control END_IF error')
+    def sentencia_if (self,p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la sentencia IF."
+        )
+        return ('IF', p.condicion, p.bloque_control)
+    
     #IF-ELSE
     @_('IF "(" condicion ")" bloque_control ELSE bloque_control END_IF ";"')
     def sentencia_if (self,p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}:Estructura IF-ELSE")
+        return ('IF-ELSE', p.condicion, p.bloque_control0, p.bloque_control1)
+     #IF-ELSE sin ";"
+    @_('IF "(" condicion ")" bloque_control ELSE bloque_control END_IF error')
+    def sentencia_if (self,p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la sentencia IF-ELSE."
+        )
         return ('IF-ELSE', p.condicion, p.bloque_control0, p.bloque_control1)
 
     #REPEAT UNTIL
@@ -301,13 +354,41 @@ class Sintactico(sly.Parser):
     def sentencia_repeat(self, p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}: Sentencia REPEAT")
         return ('REPEAT', p.bloque_control, p.condicion)
+    #REPEAT UNTIL sin ;
+    @_('REPEAT bloque_control UNTIL "(" condicion ")" error')
+    def sentencia_repeat(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la sentencia REPEAT."
+        )
+        return ('REPEAT', p.bloque_control, p.condicion)
 
     #FUNCIONES
-    @_('tipo FUNCTION ID "(" parametros_formales ")" sentencias_declarativas BEGIN sentencias_ejecutables END ";"')
+    @_('tipo FUNCTION ID "(" parametros_formales ")" sentencias_declarativas bloque_delimitado ";"')
     def sentencia_funcion(self, p):
-        return ('FUNCION', p.tipo, p.ID, p.parametros_formales, p.sentencias_declarativas, p.sentencias_ejecutables)
+        return ('FUNCION', p.tipo, p.ID, p.parametros_formales, p.sentencias_declarativas, p.bloque_delimitado)
+
+    @_('tipo FUNCTION ID "(" parametros_formales ")" sentencias_declarativas bloque_delimitado error')
+    def sentencia_funcion(self, p):
+        self.errores_sintacticos.append(f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la declaración de función.")
+        return ('FUNCION', p.tipo, p.ID, p.parametros_formales, p.sentencias_declarativas, p.bloque_delimitado)
+
+    #Manejo de error: falta nombre de funcion
+    @_('tipo FUNCTION error "(" parametros_formales ")" sentencias_declarativas bloque_delimitado ";"')
+    def sentencia_funcion(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta el nombre de la función."
+        )
+        return (
+            'FUNCION',
+            p.tipo,
+            None,
+            p.parametros_formales,
+            p.sentencias_declarativas,
+            p.bloque_delimitado
+        )
 
     #para mas de una variable
+
     @_('tipo ID')
     def parametros_formales(self, p):
         return [(p.tipo, p.ID)]
@@ -316,7 +397,7 @@ class Sintactico(sly.Parser):
         p.parametros_formales.append((p.tipo, p.ID))
         return p.parametros_formales
     #expresion de retorno
-    @_('RET "(" expresion ")" ";"')
+    @_('RET "(" expresion ")"')
     def retorno(self, p):
         self.estructuras_detectadas.append("Retorno de función")
         return ('RETORNO', p.expresion)
@@ -366,6 +447,11 @@ class Sintactico(sly.Parser):
                 p.ID, 
                 p.cuerpo_clase)
 
+    @_('CLASS ID BEGIN cuerpo_clase END error')
+    def sentencia_clase(self, p):
+        self.errores_sintacticos.append(f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la clase.")
+        return ('CLASE', p.ID, p.cuerpo_clase)
+
     @_('CLASS ID IMPORT FROM lista_variables BEGIN cuerpo_clase END ";"')
     def sentencia_clase (self,p):
         self.estructuras_detectadas.append(f"En linea {p.lineno}: CLASE {p.ID}")
@@ -373,6 +459,11 @@ class Sintactico(sly.Parser):
                 p.ID, 
                 p.lista_variables ,
                 p.cuerpo_clase)
+
+    @_('CLASS ID IMPORT FROM lista_variables BEGIN cuerpo_clase END error')
+    def sentencia_clase(self, p):
+        self.errores_sintacticos.append(f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la clase.")
+        return ('CLASE_IMPORT', p.ID, p.lista_variables, p.cuerpo_clase)
     
     #Cuerpo de la clase
     @_('declaracion_clase')
@@ -403,6 +494,11 @@ class Sintactico(sly.Parser):
                 p.tipo,
                 p.ID)
 
+    @_('tipo ID error')
+    def atributo_clase(self, p):
+        self.errores_sintacticos.append(f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final del atributo.")
+        return ('ATRIBUTO', p.tipo, p.ID)
+
     @_('tipo ID EXPORT TO lista_variables ";"')
     def atributo_clase(self, p):
 
@@ -412,9 +508,16 @@ class Sintactico(sly.Parser):
             p.ID,
             p.lista_variables
         )
+
+    @_('tipo ID EXPORT TO lista_variables error')
+    def atributo_clase(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final del atributo exportado."
+        )
+        return ('ATRIBUTO_EXPORT', p.tipo, p.ID, p.lista_variables)
     
     #metodos
-    @_('tipo ID "(" parametros_formales ")" BEGIN sentencias_ejecutables END ";"')
+    @_('tipo ID "(" parametros_formales ")" bloque_delimitado ";"')
     def metodo_clase (self, p):
         self.estructuras_detectadas.append(f"En linea: {p.lineno}. Metodo '{p.ID}'")
         return(
@@ -422,10 +525,17 @@ class Sintactico(sly.Parser):
             p.tipo,
             p.ID,
             p.parametros_formales,
-            p.sentencias_ejecutables
+            p.bloque_delimitado
         )
 
-    @_('tipo ID "(" parametros_formales ")" BEGIN sentencias_ejecutables END EXPORT TO lista_variables ";"')
+    @_('tipo ID "(" parametros_formales ")" bloque_delimitado error')
+    def metodo_clase(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final del método."
+        )
+        return ('METODO', p.tipo, p.ID, p.parametros_formales, p.bloque_delimitado)
+
+    @_('tipo ID "(" parametros_formales ")" bloque_delimitado EXPORT TO lista_variables ";"')
     def metodo_clase(self, p):
 
         self.estructuras_detectadas.append(f"En linea: {p.lineno} Metodo exportado '{p.ID}'")
@@ -434,18 +544,36 @@ class Sintactico(sly.Parser):
             p.tipo,
             p.ID,
             p.parametros_formales,
-            p.sentencias_ejecutables,
+            p.bloque_delimitado,
             p.lista_variables
         )
+
+    @_('tipo ID "(" parametros_formales ")" bloque_delimitado EXPORT TO lista_variables error')
+    def metodo_clase(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final del método exportado."
+        )
+        return (
+            'METODO_EXPORT',
+            p.tipo,
+            p.ID,
+            p.parametros_formales,
+            p.bloque_delimitado,
+            p.lista_variables
+        )
+    
     @_('EXTENDS lista_variables ";"')
     def sentencia_extends(self, p):
-
-        self.estructuras_detectadas.append(
-            f"En linea: {p.lineno}EXTENDS {p.lista_variables}"
-        )
-
+        self.estructuras_detectadas.append(f"En linea: {p.lineno}EXTENDS {p.lista_variables}")
         return ('EXTENDS',p.lista_variables)
-  
+
+    @_('EXTENDS lista_variables error')
+    def sentencia_extends(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de EXTENDS."
+        )
+        return ('EXTENDS', p.lista_variables)
+  #Convercion explicita
     @_('TOSF "(" expresion ")"')
     def sentencia_conv(self, p):
         self.estructuras_detectadas.append(
@@ -457,22 +585,61 @@ class Sintactico(sly.Parser):
         )
 
     #errores
-        def error(self, p):
-    
-            if p:
-    
-                mensaje = (
-                    f"Línea {p.lineno}: Error sintáctico. "
-                    f"Token inesperado '{p.type}' "
-                    f"con valor '{p.value}'."
-                )
-                self.errores_sintacticos.append(mensaje)
-                print(mensaje)
-            else:
-                mensaje = (
-                    "Error sintáctico: "
-                    "fin de archivo inesperado."
-                )
-                self.errores_sintacticos.append(mensaje)
-                print(mensaje)
-    
+    def error(self, p):
+
+        if p:
+            tokens_de_recuperacion = {
+                'BEGIN', 'END', 'IF', 'ELSE', 'END_IF', 'REPEAT', 'UNTIL',
+                'RET', 'TOSF', 'POUT', 'ID', 'LONGINT', 'SINGLEF',
+                'TYPEDEF', 'CLASS', 'EXTENDS', '('
+            }
+            if p.type in tokens_de_recuperacion:
+                return
+
+            mensaje = (
+                f"Línea {p.lineno}: Error sintáctico. "
+                f"Token inesperado '{p.type}' "
+                f"con valor '{p.value}'."
+            )
+            self.errores_sintacticos.append(mensaje)
+
+            linea_error = p.lineno
+            siguiente_token = next(self.tokens, None)
+            while siguiente_token and siguiente_token.lineno == linea_error:
+                siguiente_token = next(self.tokens, None)
+
+            self.errok()
+            if siguiente_token:
+                return siguiente_token
+        else:
+            mensaje = (
+                "Error sintáctico: "
+                "fin de archivo inesperado."
+            )
+            self.errores_sintacticos.append(mensaje)
+
+    #errores Sintacticos
+    # Falta de nombre de programa
+    @_('sentencias_declarativas bloque_delimitado')
+    def programa(self, p):
+        self.errores_sintacticos.append(f"Línea {p.lineno}: Error Sintáctico: Falta el nombre del programa al inicio.")
+        return ('PROGRAMA', None, p.sentencias_declarativas, p.bloque_delimitado)
+
+    #Falta de delimitador de sentencias ejecutables (begin o end).
+    #para esto tenemos que hacer un cambio grande que es generando la regla para agrupar por begin end
+    @_('BEGIN sentencias_ejecutables END')
+    def bloque_delimitado(self, p):
+        return p.sentencias_ejecutables
+
+    #Falta de begin en bloque
+    @_('sentencias_ejecutables END')
+    def bloque_delimitado(self, p):
+        self.errores_sintacticos.append(f"Línea {p.lineno}: Error Sintáctico: Falta el delimitador 'BEGIN'.")
+        return p.sentencias_ejecutables
+
+    @_('BEGIN sentencias_ejecutables')
+    def bloque_delimitado(self, p):
+            self.errores_sintacticos.append(f"Línea {p.lineno}: Error Sintáctico: Falta el delimitador 'END'.")
+            return p.sentencias_ejecutables
+
+   
