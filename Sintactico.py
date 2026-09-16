@@ -68,7 +68,7 @@ class Sintactico(sly.Parser):
     #Funcion como declaracion
     @_('sentencia_funcion')
     def sentencia_declarativa(self, p):
-        return p.sentencia_function
+        return p.sentencia_funcion
 
     # Enumeración / TYPEDEF
     @_('TYPEDEF ID ASIGN_IGUAL "[" lista_valores "]" ";"')
@@ -157,6 +157,7 @@ class Sintactico(sly.Parser):
     @_('salida ";"')
     def sentencia_ejecutable(self, p):
         return p.salida
+    
     #llamado de funcion
     @_('llamado_funcion ";"')
     def sentencia_ejecutable(self, p):
@@ -172,7 +173,7 @@ class Sintactico(sly.Parser):
 
     #ASIGNACIONES
 
-    @_('referencia ASIGN expresion'
+    @_('referencia ASIGN expresion',
        'referencia ASIGN_IGUAL expresion')
     def asignacion(self,p):
         if p[1] == ':=':
@@ -303,7 +304,7 @@ class Sintactico(sly.Parser):
 
     #FUNCIONES
     @_('tipo FUNCTION ID "(" parametros_formales ")" sentencias_declarativas BEGIN sentencias_ejecutables END ";"')
-    def declaracion_funcion(self, p):
+    def sentencia_funcion(self, p):
         return ('FUNCION', p.tipo, p.ID, p.parametros_formales, p.sentencias_declarativas, p.sentencias_ejecutables)
 
     #para mas de una variable
@@ -341,6 +342,21 @@ class Sintactico(sly.Parser):
     @_('') # Regla vacía porque el orden es opcional
     def orden_evaluacion(self, p):
         return None
+
+    @_('POUT "(" STRINGM ")"')
+    def salida(self, p):
+        self.estructuras_detectadas.append(
+            f"En linea: {p.lineno} Salida POUT"
+        )
+        return ('POUT_STRING', p.STRINGM)
+
+
+    @_('POUT "(" expresion ")"')
+    def salida(self, p):
+        self.estructuras_detectadas.append(
+            f"En linea: {p.lineno} Salida POUT"
+        )
+        return ('POUT', p.expresion)
 
     #Clases
     @_('CLASS ID BEGIN cuerpo_clase END ";"')
@@ -398,18 +414,18 @@ class Sintactico(sly.Parser):
         )
     
     #metodos
-    @_('tipo ID "(" lista_parametros_formales ")"BEGIN sentencias_ejecutables END ";"')
+    @_('tipo ID "(" parametros_formales ")" BEGIN sentencias_ejecutables END ";"')
     def metodo_clase (self, p):
         self.estructuras_detectadas.append(f"En linea: {p.lineno}. Metodo '{p.ID}'")
         return(
             'METODO',
             p.tipo,
             p.ID,
-            p.lista_parametros_formales,
+            p.parametros_formales,
             p.sentencias_ejecutables
         )
 
-    @_('tipo ID "(" lista_parametros_formales ")" BEGIN sentencias_ejecutables END EXPORT TO lista_variables ";"')
+    @_('tipo ID "(" parametros_formales ")" BEGIN sentencias_ejecutables END EXPORT TO lista_variables ";"')
     def metodo_clase(self, p):
 
         self.estructuras_detectadas.append(f"En linea: {p.lineno} Metodo exportado '{p.ID}'")
@@ -417,7 +433,7 @@ class Sintactico(sly.Parser):
             'METODO_EXPORT',
             p.tipo,
             p.ID,
-            p.lista_parametros_formales,
+            p.parametros_formales,
             p.sentencias_ejecutables,
             p.lista_variables
         )
