@@ -848,3 +848,26 @@ class Sintactico(sly.Parser):
             'valores': []
         }
         return ('TYPEDEF', p.ID, [])
+    #Error: falta FROM en IMPORT
+    @_('CLASS ID IMPORT lista_variables BEGIN cuerpo_clase END ";"')
+    def sentencia_clase(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Ausencia de 'FROM' en la declaración IMPORT de la clase '{p.ID}'."
+        )
+        return ('CLASE_IMPORT', p.ID, p.lista_variables, p.cuerpo_clase)
+    #Error: falta TO en EXPORT
+    # Atributo
+    @_('tipo ID EXPORT lista_variables ";"')
+    def atributo_clase(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Ausencia de 'TO' en la declaración EXPORT del atributo '{p.ID}'."
+        )
+        return ('ATRIBUTO_EXPORT', p.tipo, p.ID, p.lista_variables)
+    #Metodo
+    @_('tipo ID "(" parametros_formales ")" bloque_delimitado EXPORT lista_variables ";"')
+    def metodo_clase(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Ausencia de 'TO' en la declaración EXPORT del método '{p.ID}'."
+        )
+        return ('METODO_EXPORT', p.tipo, p.ID, p.parametros_formales, p.bloque_delimitado, p.lista_variables)
+    
