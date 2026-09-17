@@ -5,6 +5,8 @@ class Sintactico(sly.Parser):
     tokens = Lexico.tokens
     debugfile = 'parser.out'
     precedence = (
+        ('left', 'MAYOR', 'MENOR', 'MAYORIGUAL', 'MENORIGUAL', 'IGUAL', 'DIFERENTE'),
+        ('left', 'FALTA_OP'),
         ('left', 'MAS', 'MENOS'),
         ('left', 'MULT', 'DIV'),
         ('right', 'UMINUS'),
@@ -238,9 +240,22 @@ class Sintactico(sly.Parser):
 
     #EXPRESIONES MATEMATICAS
     @_('expresion MAS termino', 
-       'expresion MENOS termino')
+       'expresion MENOS termino',
+       'expresion ID %prec FALTA_OP',
+       'expresion NUMBER %prec FALTA_OP',
+       'expresion FLOAT %prec FALTA_OP',
+       'expresion STRINGM %prec FALTA_OP')
     def expresion(self, p):
-        return ('OP_BINARIA', p[1], p.expresion, p.termino)
+        # Si la regla que hizo match tiene 3 elementos (ej: expresion MAS termino)
+        if len(p) == 3:
+            return ('OP_BINARIA', p[1], p.expresion, p.termino)
+        
+        # Si tiene 2 elementos (ej: expresion NUMBER), es porque falta el operador
+        else:
+            self.errores_sintacticos.append(
+                f"Línea {p.lineno}: Error Sintáctico: Falta operador en la expresión."
+            )
+            return p.expresion
 
     #Manejo falta de operando
     @_('expresion MAS error',
@@ -250,6 +265,7 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Falta operando en la expresión."
         )
         return ('OP_BINARIA', p[1], p.expresion, None)
+
     @_('termino')
     def expresion(self, p):
         return p.termino
@@ -274,9 +290,9 @@ class Sintactico(sly.Parser):
     def factor(self, p):
         return(p[0])
     
-    @_('MENOS NUMBER %prec UMINUS')
+    @_('MENOS factor %prec UMINUS')
     def factor(self, p):
-        return ('NEGATIVO',-p.NUMBER)
+        return ('NEGATIVO',-p[1])
 
 
     @_('ID ASIGN_IGUAL "(" expresion_estricta ")"')
@@ -323,9 +339,9 @@ class Sintactico(sly.Parser):
     def factor_estricto(self,p):
         return p[0]
 
-    @_('MENOS NUMBER %prec UMINUS')
+    @_('MENOS factor_estricto %prec UMINUS')
     def factor_estricto(self, p):
-        return ('NEGATIVO',-p.NUMBER)
+        return ('NEGATIVO',-p[1])
 
     @_('NUMBER')
     def numero(self, p):
@@ -333,15 +349,15 @@ class Sintactico(sly.Parser):
             raise ValueError(f"Constante entera positiva fuera de rango: {p.NUMBER}")
         return p.NUMBER
 
-    #Estructura Condicion
-    @_('expresion comparador expresion')
-    def condicion(self,p):
-        return('CONDICION',p[1],p[0],p[2])
-
-    #comparadores
-    @_('MAYOR', 'MENOR', 'MAYORIGUAL', 'MENORIGUAL', 'IGUAL', 'DIFERENTE')
-    def comparador (self, p):
-        return p[0]
+    # Estructura Condicion (con precedencia integrada)
+    @_('expresion MAYOR expresion',
+       'expresion MENOR expresion',
+       'expresion MAYORIGUAL expresion',
+       'expresion MENORIGUAL expresion',
+       'expresion IGUAL expresion',
+       'expresion DIFERENTE expresion')
+    def condicion(self, p):
+        return ('CONDICION', p[1], p[0], p[2])
 
     #bloque de control
     @_('sentencia_ejecutable')
@@ -357,11 +373,35 @@ class Sintactico(sly.Parser):
     def sentencia_if (self,p):
         self.estructuras_detectadas.append(f"Línea {p.lineno}:Estructura IF")
         return ('IF', p.condicion, p.bloque_control)
+
     # Estructura IF sin ";"
     @_('IF "(" condicion ")" bloque_control END_IF error')
     def sentencia_if (self,p):
         self.errores_sintacticos.append(
             f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la sentencia IF."
+        )
+        return ('IF', p.condicion, p.bloque_control)
+
+    # Manejo de errores: Falta paréntesis en IF
+    @_('IF condicion ")" bloque_control END_IF ";"')
+    def sentencia_if(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta paréntesis de apertura '(' en la condición del IF."
+        )
+        return ('IF', p.condicion, p.bloque_control)
+
+    @_('IF "(" condicion bloque_control END_IF ";"')
+    def sentencia_if(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta paréntesis de cierre ')' en la condición del IF."
+        )
+        return ('IF', p.condicion, p.bloque_control)
+
+    # Manejo de errores: Falta de END_IF en IF simple
+    @_('IF "(" condicion ")" bloque_control error ";"')
+    def sentencia_if(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta la palabra reservada 'END_IF' para cerrar la sentencia IF."
         )
         return ('IF', p.condicion, p.bloque_control)
     
@@ -378,6 +418,29 @@ class Sintactico(sly.Parser):
         )
         return ('IF-ELSE', p.condicion, p.bloque_control0, p.bloque_control1)
 
+    # Manejo de errores: Falta paréntesis en IF-ELSE
+    @_('IF condicion ")" bloque_control ELSE bloque_control END_IF ";"')
+    def sentencia_if(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta paréntesis de apertura '(' en la condición del IF-ELSE."
+        )
+        return ('IF-ELSE', p.condicion, p.bloque_control0, p.bloque_control1)
+
+    @_('IF "(" condicion bloque_control ELSE bloque_control END_IF ";"')
+    def sentencia_if(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta paréntesis de cierre ')' en la condición del IF-ELSE."
+        )
+        return ('IF-ELSE', p.condicion, p.bloque_control0, p.bloque_control1)
+
+    # Manejo de errores: Falta de END_IF en IF-ELSE
+    @_('IF "(" condicion ")" bloque_control ELSE bloque_control error ";"')
+    def sentencia_if(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta la palabra reservada 'END_IF' para cerrar la sentencia IF-ELSE."
+        )
+        return ('IF-ELSE', p.condicion, p.bloque_control0, p.bloque_control1)
+
     #REPEAT UNTIL
     @_('REPEAT bloque_control UNTIL "(" condicion ")" ";"')
     def sentencia_repeat(self, p):
@@ -390,6 +453,30 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la sentencia REPEAT."
         )
         return ('REPEAT', p.bloque_control, p.condicion)
+
+    # Manejo de errores: Falta paréntesis en REPEAT UNTIL
+    @_('REPEAT bloque_control UNTIL condicion ")" ";"')
+    def sentencia_repeat(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta paréntesis de apertura '(' en el UNTIL."
+        )
+        return ('REPEAT', p.bloque_control, p.condicion)
+
+    @_('REPEAT bloque_control UNTIL "(" condicion ";"')
+    def sentencia_repeat(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta paréntesis de cierre ')' en el UNTIL."
+        )
+        return ('REPEAT', p.bloque_control, p.condicion)
+
+    # Manejo de errores: Falta de cuerpo en iteraciones
+    @_('REPEAT UNTIL "(" condicion ")" ";"')
+    def sentencia_repeat(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta de cuerpo en la iteración REPEAT-UNTIL."
+        )
+        # Retornamos un nodo con un bloque vacío ([]) para que el compilador no explote
+        return ('REPEAT', [], p.condicion)
 
     #FUNCIONES
     @_('tipo FUNCTION ID "(" parametros_formales ")" sentencias_declarativas bloque_delimitado ";"')
@@ -488,7 +575,6 @@ class Sintactico(sly.Parser):
         )
         return ('POUT_STRING', p.STRINGM)
 
-
     @_('POUT "(" expresion ")"')
     def salida(self, p):
         self.estructuras_detectadas.append(
@@ -496,6 +582,19 @@ class Sintactico(sly.Parser):
         )
         return ('POUT', p.expresion)
 
+    # Manejo de error: Falta argumento en sentencia pout
+    @_('POUT "(" ")"')
+    def salida(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta argumento en sentencia POUT."
+        )
+        # Retornamos None (o un nodo de error) para que el árbol no explote
+        return ('POUT_ERROR', None)
+
+    @_('POUT "(" error ")"')
+    def salida(self, p):
+        return ('POUT_ERROR', None)
+    
     #Clases
     @_('CLASS ID BEGIN cuerpo_clase END ";"')
     def sentencia_clase(self, p):
@@ -641,45 +740,18 @@ class Sintactico(sly.Parser):
             p.expresion
         )
 
-    #errores
+    # errores
     def error(self, p):
-
         if p:
-            if p.type in {'MAS', 'MENOS', 'MULT', 'DIV'}:
+            # SLY inyectará un token 'error' automáticamente.
+            # Solo informamos si no es un token de sincronización de cierre
+            tokens_silenciados = {'BEGIN', 'END', 'ELSE', 'END_IF', 'UNTIL', ';'}
+            if p.type not in tokens_silenciados:
                 self.errores_sintacticos.append(
-                    f"Línea {p.lineno}: Error Sintáctico: "
-                    "Falta operando en la expresión."
+                    f"Línea {p.lineno}: Error sintáctico. Token inesperado '{p.type}' con valor '{p.value}'."
                 )
-            elif p.type != ';':
-                mensaje = (
-                    f"Línea {p.lineno}: Error sintáctico. "
-                    f"Token inesperado '{p.type}' "
-                    f"con valor '{p.value}'."
-                )
-                self.errores_sintacticos.append(mensaje)
-
-            tokens_de_recuperacion = {
-                'BEGIN', 'END', 'IF', 'ELSE', 'END_IF', 'REPEAT', 'UNTIL',
-                'RET', 'TOSF', 'POUT', 'ID', 'LONGINT', 'SINGLEF',
-                'TYPEDEF', 'CLASS', 'EXTENDS', '(', ')', ',', ';'
-            }
-            if p.type in tokens_de_recuperacion:
-                return
-
-            linea_error = p.lineno
-            siguiente_token = next(self.tokens, None)
-            while siguiente_token and siguiente_token.lineno == linea_error:
-                siguiente_token = next(self.tokens, None)
-
-            self.errok()
-            if siguiente_token:
-                return siguiente_token
         else:
-            mensaje = (
-                "Error sintáctico: "
-                "fin de archivo inesperado."
-            )
-            self.errores_sintacticos.append(mensaje)
+            self.errores_sintacticos.append("Error sintáctico: fin de archivo inesperado.")
 
     #errores Sintacticos
     # Falta de nombre de programa
@@ -704,16 +776,3 @@ class Sintactico(sly.Parser):
     def bloque_delimitado(self, p):
             self.errores_sintacticos.append(f"Línea {p.lineno}: Error Sintáctico: Falta el delimitador 'END'.")
             return p.sentencias_ejecutables
-
-    #falta operador
-    @_('expresion termino')
-    def expresion(self, p):
-        self.errores_sintacticos.append(
-            f"Línea {p.lineno}: Error Sintáctico: Falta operador en la expresión.")
-        return p.expresion
-
-    @_('termino factor')
-    def termino(self, p):
-        self.errores_sintacticos.append(
-            f"Línea {p.lineno}: Error Sintáctico: Falta operador en la expresión.")
-        return p.termino
