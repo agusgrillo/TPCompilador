@@ -707,7 +707,7 @@ class Sintactico(sly.Parser):
             self.tabla_de_simbolos[p.ID] = {'tipo': 'LONGINT', 'valor': 0, 'es_atributo': True, 'export': p.lista_variables}
         elif p.tipo == 'SINGLEF':
             self.tabla_de_simbolos[p.ID] = {'tipo': 'SINGLEF', 'valor': 0.0, 'es_atributo': True, 'export': p.lista_variables}
-            
+
         return ('ATRIBUTO_EXPORT', p.tipo, p.ID, p.lista_variables)
 
     @_('tipo ID EXPORT TO lista_variables error')
@@ -886,3 +886,5 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Ausencia de nombre o lista de clases después de 'EXTENDS'."
         )
         return ('EXTENDS', [])
+    
+    
