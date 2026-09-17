@@ -776,3 +776,11 @@ class Sintactico(sly.Parser):
     def bloque_delimitado(self, p):
             self.errores_sintacticos.append(f"Línea {p.lineno}: Error Sintáctico: Falta el delimitador 'END'.")
             return p.sentencias_ejecutables
+
+    # ERROR TEMA 12: Falta la palabra reservada 'UNTIL' 
+    @_('REPEAT bloque_control "(" condicion ")" ";"')
+    def sentencia_repeat(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Falta la palabra reservada 'UNTIL' en la sentencia REPEAT."
+        )
+        return ('REPEAT', p.bloque_control, p.condicion)
