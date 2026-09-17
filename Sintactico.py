@@ -870,4 +870,18 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Ausencia de 'TO' en la declaración EXPORT del método '{p.ID}'."
         )
         return ('METODO_EXPORT', p.tipo, p.ID, p.parametros_formales, p.bloque_delimitado, p.lista_variables)
-    
+    #Ausencia de nombre o lista de clases despues de extends
+    @_('EXTENDS ";"')
+    def sentencia_extends(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Ausencia de nombre o lista de clases después de 'EXTENDS'."
+        )
+        return ('EXTENDS', [])
+
+    #Ausencia de lista y además falta ';' (resincronización en cuerpo de clase)
+    @_('EXTENDS error')
+    def sentencia_extends(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Ausencia de nombre o lista de clases después de 'EXTENDS'."
+        )
+        return ('EXTENDS', [])
