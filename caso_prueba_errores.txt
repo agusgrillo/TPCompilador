@@ -1,0 +1,78 @@
+programa_de_errores_general
+
+// ============================================================================
+// BLOQUE DECLARATIVO
+// ============================================================================
+
+// Error 1: Falta ';' en declaración de variables primitivas
+LONGINT var_sin_puntoycoma
+
+// Error 2: Falta ',' en lista de variables
+SINGLEF var_uno var_dos;
+
+// Error 3: Ausencia de valores para la enumeración (Tema 23)
+TYPEDEF enum_vacia = [];
+
+// Error 4: Enumeración heterogénea (Validación semántica Tema 23)
+TYPEDEF enum_mixta = [10$l, 3.14];
+
+// Error 5: Falta nombre de parámetro formal en función
+SINGLEF FUNCTION funcion_sin_nombre_param(LONGINT)
+BEGIN
+    RET(1.0);
+END;
+
+// Error 6: Falta tipo de parámetro formal en función
+SINGLEF FUNCTION funcion_sin_tipo_param(param_suelto)
+BEGIN
+    RET(2.0);
+END;
+
+// Error 7: Falta 'FROM' en IMPORT de clase (Tema 26)
+CLASS clase_err_import IMPORT clase_fuente BEGIN
+    LONGINT x;
+END;
+
+// Error 8: Falta 'TO' en EXPORT de atributo (Tema 26)
+CLASS clase_err_export BEGIN
+    LONGINT dato EXPORT clase_destino;
+    
+    // Error 9: Ausencia de lista de clases después de EXTENDS (Temas 30-32)
+    EXTENDS ;
+END;
+
+// ============================================================================
+// BLOQUE PRINCIPAL EJECUTABLE
+// ============================================================================
+BEGIN
+    // Error 10: Falta ';' al final de una sentencia ejecutable
+    var_uno := 10.0
+
+    // Error 11: Falta de operando en expresión matemática
+    var_dos := 5.0 + ;
+
+    // Error 12: Falta de operador en expresión matemática
+    var_dos := 5.0 2.0;
+
+    // Error 13: Uso de ':=' donde debe usarse '=' en expresión (Temas 17 y 18)
+    var_uno := var_dos := (3.0);
+
+    // Error 14: Falta de argumento en sentencia POUT
+    POUT();
+
+    // Error 15: Falta ';' al final de la sentencia IF
+    IF (var_uno > 0.0)
+    BEGIN
+        var_uno := var_uno - 1.0;
+    END
+    END_IF
+
+    // Error 16: Falta la palabra reservada 'UNTIL' en REPEAT (Tema 12)
+    REPEAT
+    BEGIN
+        var_uno := var_uno + 1.0;
+    END
+    (var_uno == 5.0);
+
+    POUT("Fin del procesamiento con recuperacion");
+END

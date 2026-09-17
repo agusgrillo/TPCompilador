@@ -690,9 +690,11 @@ class Sintactico(sly.Parser):
     #atributos de clase
     @_('tipo ID ";"')
     def atributo_clase(self, p):
-        return ('ATRIBUTO',
-                p.tipo,
-                p.ID)
+        if p.tipo == 'LONGINT':
+            self.tabla_de_simbolos[p.ID] = {'tipo': 'LONGINT', 'valor': 0, 'es_atributo': True}
+        elif p.tipo == 'SINGLEF':
+            self.tabla_de_simbolos[p.ID] = {'tipo': 'SINGLEF', 'valor': 0.0, 'es_atributo': True}
+        return ('ATRIBUTO', p.tipo, p.ID)
 
     @_('tipo ID error')
     def atributo_clase(self, p):
@@ -701,13 +703,12 @@ class Sintactico(sly.Parser):
 
     @_('tipo ID EXPORT TO lista_variables ";"')
     def atributo_clase(self, p):
-
-        return (
-            'ATRIBUTO_EXPORT',
-            p.tipo,
-            p.ID,
-            p.lista_variables
-        )
+        if p.tipo == 'LONGINT':
+            self.tabla_de_simbolos[p.ID] = {'tipo': 'LONGINT', 'valor': 0, 'es_atributo': True, 'export': p.lista_variables}
+        elif p.tipo == 'SINGLEF':
+            self.tabla_de_simbolos[p.ID] = {'tipo': 'SINGLEF', 'valor': 0.0, 'es_atributo': True, 'export': p.lista_variables}
+            
+        return ('ATRIBUTO_EXPORT', p.tipo, p.ID, p.lista_variables)
 
     @_('tipo ID EXPORT TO lista_variables error')
     def atributo_clase(self, p):

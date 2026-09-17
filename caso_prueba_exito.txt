@@ -1,0 +1,88 @@
+programa_valido
+
+// ============================================================================
+// 1. DECLARACIONES GLOBALES
+// ============================================================================
+LONGINT contador, indice, aux_entero;
+SINGLEF factor_escala, resultado_calculo;
+
+// Enumeraciones homogéneas (Tema 23)
+TYPEDEF dias_laborales = [1$l, 2$l, 3$l, 4$l, 5$l];
+TYPEDEF pesos_ponderados = [0.15, 0.35, 0.5];
+TYPEDEF estados_proceso = ["LISTO", "EN_CURSO", "FINALIZADO"];
+
+// Variables basadas en tipos de usuario
+dias_laborales dia_actual;
+
+// ============================================================================
+// 2. DECLARACIÓN DE CLASES (Herencia, Import y Export - Temas 26 y 30-32)
+// ============================================================================
+CLASS clase_base BEGIN
+    LONGINT base_val;
+    SINGLEF tasa EXPORT TO clase_derivada;
+END;
+
+CLASS clase_derivada IMPORT FROM clase_base BEGIN
+    LONGINT derivada_val;
+
+    SINGLEF metodo_interno(LONGINT p1, SINGLEF p2)
+    BEGIN
+        derivada_val := p1;
+        RET(p2 * 1.5);
+    END;
+
+    EXTENDS clase_base;
+END;
+
+// ============================================================================
+// 3. DECLARACIÓN DE FUNCIÓN (Con parámetros formales y retorno)
+// ============================================================================
+SINGLEF FUNCTION procesar_datos(LONGINT cantidad, SINGLEF base)
+    SINGLEF temp_resultado;
+BEGIN
+    temp_resultado := base * TOSF(cantidad);
+    RET(temp_resultado + 5.0);
+END;
+
+// ============================================================================
+// 4. BLOQUE PRINCIPAL EJECUTABLE
+// ============================================================================
+BEGIN
+    contador := 0$l;
+    factor_escala := 2.5;
+
+    // Asignación simple y compuesta
+    aux_entero := contador + 10$l * 2$l;
+
+    // Tema 17: Asignación dentro de expresión con '=' y delimitada por paréntesis
+    aux_entero := contador = (5$l + 3$l);
+
+    // Salida por pantalla
+    POUT("Iniciando ejecucion de pruebas validas");
+    POUT(aux_entero);
+
+    // Estructura IF - ELSE con bloque delimitado
+    IF (aux_entero >= 10$l)
+    BEGIN
+        POUT("El valor supera o iguala a 10");
+        contador := aux_entero - 1$l;
+    END
+    ELSE
+    BEGIN
+        POUT("El valor es menor a 10");
+        contador := 0$l;
+    END
+    END_IF;
+
+    // Estructura REPEAT - UNTIL
+    REPEAT
+    BEGIN
+        contador := contador + 1$l;
+    END
+    UNTIL (contador == 5$l);
+
+    // Casting TOSF y llamado a función con orden de evaluación (Temas 19 y 20)
+    resultado_calculo := procesar_datos(contador, factor_escala) [1$l, 2$l];
+
+    POUT("Fin del programa exitoso");
+END
