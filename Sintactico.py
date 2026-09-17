@@ -784,3 +784,11 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Falta la palabra reservada 'UNTIL' en la sentencia REPEAT."
         )
         return ('REPEAT', p.bloque_control, p.condicion)
+
+    # ERROR TEMAS 17 y 18: Uso de ':=' donde debe usarse '='
+    @_('ID ASIGN "(" expresion_estricta ")"')
+    def asign_expresion(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Uso del símbolo de asignación ':=' donde debe usarse '='."
+        )
+        return ('ASIGNACION_EN_EXPRESION', p.ID, p.expresion_estricta)
