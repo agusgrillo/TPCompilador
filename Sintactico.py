@@ -67,25 +67,25 @@ class Sintactico(sly.Parser):
         return p.sentencia_funcion
 
     # Enumeración / TYPEDEF
-    @_('TYPEDEF ID ASIGN_IGUAL "[" lista_valores "]" ";"')
+    @_('TYPEDEF ID ASIGN_IGUAL "[" lista_valores_enum "]" ";"')
     def sentencia_declarativa(self, p):
         self.tabla_de_simbolos[p.ID] = {
             'tipo': 'TYPEDEF',
-            'valores': p.lista_valores
+            'valores': p.lista_valores_enum
         }
         self.estructuras_detectadas.append(f"Línea {p.lineno}:TYPEDEF '{p.ID}'")
         return (
             'TYPEDEF',
             p.ID,
-            p.lista_valores
+            p.lista_valores_enum
         )
     #Manejo de errores: falta ;
-    @_('TYPEDEF ID ASIGN_IGUAL "[" lista_valores "]" error')
+    @_('TYPEDEF ID ASIGN_IGUAL "[" lista_valores_enum "]" error')
     def sentencia_declarativa(self, p):
         self.errores_sintacticos.append(
             f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la sentencia TYPEDEF."
         )
-        return ('TYPEDEF', p.ID, p.lista_valores)
+        return ('TYPEDEF', p.ID, p.lista_valores_enum)
     @_('NUMBER')
     def lista_valores(self, p):
         return [p.NUMBER]
@@ -94,6 +94,23 @@ class Sintactico(sly.Parser):
     def lista_valores(self, p):
         p.lista_valores.append(p.NUMBER)
         return p.lista_valores
+
+    #El elemento del enum puede ser de los tipos basicos
+    #El manejo de que solo sea de un tipo es semantico
+    @_('NUMBER',
+       'FLOAT',
+       'STRINGM')
+    def valor_enum(self, p):
+        return p[0]
+    #caso base de enum
+    @_('valor_enum')
+    def lista_valores_enum(self, p):
+        return [p.valor_enum]
+    #caso recursivo
+    @_('lista_valores_enum "," valor_enum')
+    def lista_valores_enum(self, p):
+        p.lista_valores_enum.append(p.valor_enum)
+        return p.lista_valores_enum
     
     #asignacion de tipo declarado del typedef
     @_('ID lista_variables ";"')
@@ -792,3 +809,15 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Uso del símbolo de asignación ':=' donde debe usarse '='."
         )
         return ('ASIGNACION_EN_EXPRESION', p.ID, p.expresion_estricta)
+
+    #ERROR TEMA 23: Ausencia de valores para la enumeración (corchetes vacíos con ';')
+    @_('TYPEDEF ID ASIGN_IGUAL "[" "]" ";"')
+    def sentencia_declarativa(self, p):
+        self.errores_sintacticos.append(
+            f"Línea {p.lineno}: Error Sintáctico: Ausencia de valores para la enumeración '{p.ID}'."
+        )
+        self.tabla_de_simbolos[p.ID] = {
+            'tipo': 'TYPEDEF',
+            'valores': []
+        }
+        return ('TYPEDEF', p.ID, [])
