@@ -745,7 +745,7 @@ class Sintactico(sly.Parser):
         if p:
             # SLY inyectará un token 'error' automáticamente.
             # Solo informamos si no es un token de sincronización de cierre
-            tokens_silenciados = {'BEGIN', 'END', 'ELSE', 'END_IF', 'UNTIL', ';'}
+            tokens_silenciados = {'BEGIN', 'END', 'ELSE', 'END_IF', 'UNTIL', ';', '(', ')'}
             if p.type not in tokens_silenciados:
                 self.errores_sintacticos.append(
                     f"Línea {p.lineno}: Error sintáctico. Token inesperado '{p.type}' con valor '{p.value}'."
