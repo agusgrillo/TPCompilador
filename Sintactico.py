@@ -66,19 +66,46 @@ class Sintactico(sly.Parser):
     def sentencia_declarativa(self, p):
         return p.sentencia_funcion
 
-    # Enumeración / TYPEDEF
+    # Declaración TYPEDEF
     @_('TYPEDEF ID ASIGN_IGUAL "[" lista_valores_enum "]" ";"')
     def sentencia_declarativa(self, p):
+        # Determinar el tipo base según el primer elemento
+        primer_valor = p.lista_valores_enum[0]
+        if isinstance(primer_valor, int):
+            tipo_base = 'LONGINT'
+        elif isinstance(primer_valor, float):
+            tipo_base = 'SINGLEF'
+        elif isinstance(primer_valor, str):
+            tipo_base = 'STRINGM'
+        else:
+            tipo_base = 'DESCONOCIDO'
+
+        # chequea que se mantenga el primer tipo
+        tipos_coincidentes = True
+        for val in p.lista_valores_enum:
+            if tipo_base == 'LONGINT' and not (isinstance(val, int) and not isinstance(val, bool)):
+                tipos_coincidentes = False
+                break
+            elif tipo_base == 'SINGLEF' and not isinstance(val, float):
+                tipos_coincidentes = False
+                break
+            elif tipo_base == 'STRINGM' and not isinstance(val, str):
+                tipos_coincidentes = False
+                break
+        #si hay alguno de otro tipo
+        if not tipos_coincidentes:
+            self.errores_sintacticos.append(
+                f"Línea {p.lineno}: Error Semántico: La enumeración '{p.ID}' contiene tipos de datos heterogéneos."
+            )
+        
         self.tabla_de_simbolos[p.ID] = {
             'tipo': 'TYPEDEF',
+            'tipo_base': tipo_base,
             'valores': p.lista_valores_enum
         }
-        self.estructuras_detectadas.append(f"Línea {p.lineno}:TYPEDEF '{p.ID}'")
-        return (
-            'TYPEDEF',
-            p.ID,
-            p.lista_valores_enum
-        )
+        self.estructuras_detectadas.append(f"Línea {p.lineno}: TYPEDEF '{p.ID}' ({tipo_base})")
+        return ('TYPEDEF', p.ID, p.lista_valores_enum)
+    
     #Manejo de errores: falta ;
     @_('TYPEDEF ID ASIGN_IGUAL "[" lista_valores_enum "]" error')
     def sentencia_declarativa(self, p):
