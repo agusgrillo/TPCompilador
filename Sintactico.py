@@ -368,7 +368,6 @@ class Sintactico(sly.Parser):
         if p[1] == 'DIV':
             if p[2] == 0:
                 self.errores_sintacticos.append(f"Línea {p.lineno}: Error: División por cero.")
-                raise ZeroDivisionError("Error: División por cero.")
         return('OP_BINARIA',p[1],p.termino_estricto,p.factor_estricto)
     
     #Manejo falta de operando
@@ -394,7 +393,7 @@ class Sintactico(sly.Parser):
     @_('NUMBER')
     def numero(self, p):
         if p.NUMBER > 2147483647:
-            raise ValueError(f"Constante entera positiva fuera de rango: {p.NUMBER}")
+            self.errores_sintacticos.append(f"Línea {p.lineno}: Error léxico/semántico: Constante entera positiva fuera de rango: {p.NUMBER}")
         return p.NUMBER
 
     # Estructura Condicion (con precedencia integrada)
