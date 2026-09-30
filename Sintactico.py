@@ -37,29 +37,23 @@ class Sintactico(sly.Parser):
     @_('tipo lista_variables ";"')
     def sentencia_declarativa(self, p):
         for variable in p.lista_variables:
-            if variable in self.tabla_de_simbolos:
+            info = self.tabla_de_simbolos.get(variable, {})
+            if info.get('declarada') == True:
                 self.errores_sintacticos.append(
-                    f"Variable '{variable}' declarada más de una vez."
+                    f"Línea {p.lineno}: Error Semántico: Variable '{variable}' declarada más de una vez."
                 )
             else:
+                if variable not in self.tabla_de_simbolos:
+                    self.tabla_de_simbolos[variable] = {}
+                
                 if p.tipo == 'LONGINT':
-                    self.tabla_de_simbolos[variable] = {
-                        'tipo': 'LONGINT',
-                        'valor': 0
-                    }
+                    self.tabla_de_simbolos[variable].update({'tipo': 'LONGINT', 'valor': 0, 'declarada': True})
                 elif p.tipo == 'SINGLEF':
-                    self.tabla_de_simbolos[variable] = {
-                        'tipo': 'SINGLEF',
-                        'valor': 0.0
-                    }
-        self.estructuras_detectadas.append(
-            f"Declaración {p.tipo}: {p.lista_variables}"
-        )
-        return (
-            'DECLARACION',
-            p.tipo,
-            p.lista_variables
-        )
+                    self.tabla_de_simbolos[variable].update({'tipo': 'SINGLEF', 'valor': 0.0, 'declarada': True})
+                    
+        self.estructuras_detectadas.append(f"Declaración {p.tipo}: {p.lista_variables}")
+        return ('DECLARACION', p.tipo, p.lista_variables)
+    
     #manejo de errores: falta de ";" en las declaraciones
     #Funcion como declaracion
     @_('sentencia_funcion')
@@ -98,11 +92,16 @@ class Sintactico(sly.Parser):
                 f"Línea {p.lineno}: Error Semántico: La enumeración '{p.ID}' contiene tipos de datos heterogéneos."
             )
         
-        self.tabla_de_simbolos[p.ID] = {
+        if p.ID not in self.tabla_de_simbolos:
+            self.tabla_de_simbolos[p.ID] = {}
+            
+        self.tabla_de_simbolos[p.ID].update({
             'tipo': 'TYPEDEF',
             'tipo_base': tipo_base,
-            'valores': p.lista_valores_enum
-        }
+            'valores': p.lista_valores_enum,
+            'declarada': True
+        })
+        
         self.estructuras_detectadas.append(f"Línea {p.lineno}: TYPEDEF '{p.ID}' ({tipo_base})")
         return ('TYPEDEF', p.ID, p.lista_valores_enum)
     
@@ -113,6 +112,7 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Falta ';' al final de la sentencia TYPEDEF."
         )
         return ('TYPEDEF', p.ID, p.lista_valores_enum)
+    
     @_('NUMBER')
     def lista_valores(self, p):
         return [p.NUMBER]
@@ -129,10 +129,12 @@ class Sintactico(sly.Parser):
        'STRINGM')
     def valor_enum(self, p):
         return p[0]
+    
     #caso base de enum
     @_('valor_enum')
     def lista_valores_enum(self, p):
         return [p.valor_enum]
+    
     #caso recursivo
     @_('lista_valores_enum "," valor_enum')
     def lista_valores_enum(self, p):
@@ -146,7 +148,8 @@ class Sintactico(sly.Parser):
             f"Declaración del tipo '{p.ID}': {p.lista_variables}"
         )
         return ('DECLARACION_TIPO_USUARIO', p.ID,p.lista_variables)
-    # TYPEDEF pero sin ";"
+    
+    #TYPEDEF pero sin ";"
     @_('ID lista_variables error')
     def sentencia_declarativa(self, p):
         self.errores_sintacticos.append(
@@ -173,30 +176,23 @@ class Sintactico(sly.Parser):
             lista_recuperada.append(p.error.value)
 
         for variable in lista_recuperada:
-            if variable in self.tabla_de_simbolos:
+            info = self.tabla_de_simbolos.get(variable, {})
+            if info.get('declarada') == True:
                 self.errores_sintacticos.append(
-                    f"Variable '{variable}' declarada más de una vez."
+                    f"Línea {p.lineno}: Error Semántico: Variable '{variable}' declarada más de una vez."
                 )
-            elif p.tipo == 'LONGINT':
-                self.tabla_de_simbolos[variable] = {
-                    'tipo': 'LONGINT',
-                    'valor': 0
-                }
-            elif p.tipo == 'SINGLEF':
-                self.tabla_de_simbolos[variable] = {
-                    'tipo': 'SINGLEF',
-                    'valor': 0.0
-                }
+            else:
+                if variable not in self.tabla_de_simbolos:
+                    self.tabla_de_simbolos[variable] = {}
+                if p.tipo == 'LONGINT':
+                    self.tabla_de_simbolos[variable].update({'tipo': 'LONGINT', 'valor': 0, 'declarada': True})
+                elif p.tipo == 'SINGLEF':
+                    self.tabla_de_simbolos[variable].update({'tipo': 'SINGLEF', 'valor': 0.0, 'declarada': True})
 
         self.errores_sintacticos.append(
-            f"Línea {p.lineno}: Error Sintáctico: "
-            f"Falta ',' en la declaración de variables."
+            f"Línea {p.lineno}: Error Sintáctico: Falta ',' en la declaración de variables."
         )
-        return (
-            'DECLARACION',
-            p.tipo,
-            lista_recuperada
-        )
+        return ('DECLARACION', p.tipo, lista_recuperada)
     
     #declaracion de clases
     @_('sentencia_clase')
@@ -207,6 +203,7 @@ class Sintactico(sly.Parser):
     @_('LONGINT')
     def tipo(self, p):
         return 'LONGINT'
+    
     @_('SINGLEF')
     def tipo(self, p):
         return 'SINGLEF'
@@ -220,10 +217,12 @@ class Sintactico(sly.Parser):
     def sentencias_ejecutables(self, p):
         p.sentencias_ejecutables.append(p.sentencia_ejecutable)
         return p.sentencias_ejecutables
+    
     @_('sentencia_ejecutable')
     def sentencias_ejecutables(self, p):
         return [p.sentencia_ejecutable]
- # CUERPO O CONTENIDO DE SENTENCIAS EJECUTABLES (Sin el ';')
+    
+    #CUERPO O CONTENIDO DE SENTENCIAS EJECUTABLES (Sin el ';')
     @_('asignacion',
        'salida',
        'llamado_funcion',
@@ -256,24 +255,24 @@ class Sintactico(sly.Parser):
         return p.sentencia_repeat
 
     #ASIGNACIONES
-
     @_('referencia ASIGN expresion',
        'referencia ASIGN_IGUAL expresion')
     def asignacion(self,p):
         if p[1] == ':=':
-            self.estructuras_detectadas.append(f"Línea {p.lineno}:Asignación ':=' sobre {p.referencia}")
+            self.estructuras_detectadas.append(f"Línea {p.lineno}: Asignación ':=' sobre {p.referencia}")
         elif p[1] == '=':
-            self.estructuras_detectadas.append(f"Línea {p.lineno}:Asignación '=' sobre {p.referencia}")
-        #si la variable ya esta asignada
+            self.estructuras_detectadas.append(f"Línea {p.lineno}: Asignación '=' sobre {p.referencia}")
         if isinstance(p.referencia, str):
-            if p.referencia not in self.tabla_de_simbolos:
-                self.errores_sintacticos.append(f"Variable '{p.referencia}' no declarada" )
+            info = self.tabla_de_simbolos.get(p.referencia, {})
+            if info.get('declarada') != True:
+                self.errores_sintacticos.append(f"Línea {p.lineno}: Error Semántico: Variable '{p.referencia}' no declarada.")
             else:
-                self.tabla_de_simbolos[p.referencia]['valor'] = p.expresion
-        return('ASIGNACION',p.referencia,p.expresion)
+                if not isinstance(p.expresion, tuple):
+                    self.tabla_de_simbolos[p.referencia]['valor'] = p.expresion
+                
+        return('ASIGNACION', p.referencia, p.expresion)
 
     #REFERENCIAS
-
     @_('ID')
     def referencia(self, p):
         return p.ID
@@ -318,6 +317,7 @@ class Sintactico(sly.Parser):
        'termino DIV factor')
     def termino(self, p):
         return ('OP_BINARIA', p[1], p.termino, p.factor)
+    
     #Manejo falta de operando
     @_('termino MULT error',
        'termino DIV error')
@@ -326,6 +326,7 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Falta operando en la expresión."
         )
         return ('OP_BINARIA', p[1], p.termino, None)
+    
     @_('factor')
     def termino(self, p):
         return p.factor
@@ -336,7 +337,7 @@ class Sintactico(sly.Parser):
     
     @_('MENOS factor %prec UMINUS')
     def factor(self, p):
-        return ('NEGATIVO',-p[1])
+        return ('NEGATIVO',p[1])
 
 
     @_('ID ASIGN_IGUAL "(" expresion_estricta ")"')
@@ -347,6 +348,7 @@ class Sintactico(sly.Parser):
        'expresion_estricta MENOS termino_estricto')
     def expresion_estricta (self,p):
         return('OP_BINARIA',p[1],p.expresion_estricta,p.termino_estricto)
+    
     #Manejo falta de operando
     @_('expresion_estricta MAS error',
        'expresion_estricta MENOS error')
@@ -355,6 +357,7 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Falta operando en la expresión."
         )
         return ('OP_BINARIA', p[1], p.expresion_estricta, None)
+    
     @_('termino_estricto')
     def expresion_estricta(self,p):
         return(p.termino_estricto)
@@ -365,8 +368,8 @@ class Sintactico(sly.Parser):
         if p[1] == 'DIV':
             if p[2] == 0:
                 self.errores_sintacticos.append(f"Línea {p.lineno}: Error: División por cero.")
-                raise ZeroDivisionError("Error: División por cero.")
         return('OP_BINARIA',p[1],p.termino_estricto,p.factor_estricto)
+    
     #Manejo falta de operando
     @_('termino_estricto MULT error',
        'termino_estricto DIV error')
@@ -385,12 +388,12 @@ class Sintactico(sly.Parser):
 
     @_('MENOS factor_estricto %prec UMINUS')
     def factor_estricto(self, p):
-        return ('NEGATIVO',-p[1])
+        return ('NEGATIVO',p[1])
 
     @_('NUMBER')
     def numero(self, p):
         if p.NUMBER > 2147483647:
-            raise ValueError(f"Constante entera positiva fuera de rango: {p.NUMBER}")
+            self.errores_sintacticos.append(f"Línea {p.lineno}: Error léxico/semántico: Constante entera positiva fuera de rango: {p.NUMBER}")
         return p.NUMBER
 
     # Estructura Condicion (con precedencia integrada)
@@ -452,9 +455,10 @@ class Sintactico(sly.Parser):
     #IF-ELSE
     @_('IF "(" condicion ")" bloque_control ELSE bloque_control END_IF ";"')
     def sentencia_if (self,p):
-        self.estructuras_detectadas.append(f"Línea {p.lineno}:Estructura IF-ELSE")
+        self.estructuras_detectadas.append(f"Línea {p.lineno}: Estructura IF-ELSE")
         return ('IF-ELSE', p.condicion, p.bloque_control0, p.bloque_control1)
-     #IF-ELSE sin ";"
+    
+    #IF-ELSE sin ";"
     @_('IF "(" condicion ")" bloque_control ELSE bloque_control END_IF error')
     def sentencia_if (self,p):
         self.errores_sintacticos.append(
@@ -584,6 +588,7 @@ class Sintactico(sly.Parser):
         )
         p.parametros_formales.append((None, p.ID))
         return p.parametros_formales
+    
     #expresion de retorno
     @_('RET "(" expresion ")"')
     def retorno(self, p):
@@ -615,14 +620,14 @@ class Sintactico(sly.Parser):
     @_('POUT "(" STRINGM ")"')
     def salida(self, p):
         self.estructuras_detectadas.append(
-            f"En linea: {p.lineno} Salida POUT"
+            f"En linea {p.lineno}: Salida POUT"
         )
         return ('POUT_STRING', p.STRINGM)
 
     @_('POUT "(" expresion ")"')
     def salida(self, p):
         self.estructuras_detectadas.append(
-            f"En linea: {p.lineno} Salida POUT"
+            f"En linea {p.lineno}: Salida POUT"
         )
         return ('POUT', p.expresion)
 
@@ -674,6 +679,7 @@ class Sintactico(sly.Parser):
     def cuerpo_clase(self, p):
         p.cuerpo_clase.append(p.declaracion_clase)
         return p.cuerpo_clase
+
     #declaraciones de la clase
     @_('atributo_clase')
     def declaracion_clase(self, p):
@@ -690,10 +696,13 @@ class Sintactico(sly.Parser):
     #atributos de clase
     @_('tipo ID ";"')
     def atributo_clase(self, p):
+        if p.ID not in self.tabla_de_simbolos:
+            self.tabla_de_simbolos[p.ID] = {}
+            
         if p.tipo == 'LONGINT':
-            self.tabla_de_simbolos[p.ID] = {'tipo': 'LONGINT', 'valor': 0, 'es_atributo': True}
+            self.tabla_de_simbolos[p.ID].update({'tipo': 'LONGINT', 'valor': 0, 'es_atributo': True, 'declarada': True})
         elif p.tipo == 'SINGLEF':
-            self.tabla_de_simbolos[p.ID] = {'tipo': 'SINGLEF', 'valor': 0.0, 'es_atributo': True}
+            self.tabla_de_simbolos[p.ID].update({'tipo': 'SINGLEF', 'valor': 0.0, 'es_atributo': True, 'declarada': True})
         return ('ATRIBUTO', p.tipo, p.ID)
 
     @_('tipo ID error')
@@ -703,10 +712,13 @@ class Sintactico(sly.Parser):
 
     @_('tipo ID EXPORT TO lista_variables ";"')
     def atributo_clase(self, p):
+        if p.ID not in self.tabla_de_simbolos:
+            self.tabla_de_simbolos[p.ID] = {}
+            
         if p.tipo == 'LONGINT':
-            self.tabla_de_simbolos[p.ID] = {'tipo': 'LONGINT', 'valor': 0, 'es_atributo': True, 'export': p.lista_variables}
+            self.tabla_de_simbolos[p.ID].update({'tipo': 'LONGINT', 'valor': 0, 'es_atributo': True, 'export': p.lista_variables, 'declarada': True})
         elif p.tipo == 'SINGLEF':
-            self.tabla_de_simbolos[p.ID] = {'tipo': 'SINGLEF', 'valor': 0.0, 'es_atributo': True, 'export': p.lista_variables}
+            self.tabla_de_simbolos[p.ID].update({'tipo': 'SINGLEF', 'valor': 0.0, 'es_atributo': True, 'export': p.lista_variables, 'declarada': True})
 
         return ('ATRIBUTO_EXPORT', p.tipo, p.ID, p.lista_variables)
 
@@ -720,7 +732,7 @@ class Sintactico(sly.Parser):
     #metodos
     @_('tipo ID "(" parametros_formales ")" bloque_delimitado ";"')
     def metodo_clase (self, p):
-        self.estructuras_detectadas.append(f"En linea: {p.lineno}. Metodo '{p.ID}'")
+        self.estructuras_detectadas.append(f"En linea {p.lineno}: Metodo '{p.ID}'")
         return(
             'METODO',
             p.tipo,
@@ -739,7 +751,7 @@ class Sintactico(sly.Parser):
     @_('tipo ID "(" parametros_formales ")" bloque_delimitado EXPORT TO lista_variables ";"')
     def metodo_clase(self, p):
 
-        self.estructuras_detectadas.append(f"En linea: {p.lineno} Metodo exportado '{p.ID}'")
+        self.estructuras_detectadas.append(f"En linea {p.lineno}: Metodo exportado '{p.ID}'")
         return (
             'METODO_EXPORT',
             p.tipo,
@@ -765,7 +777,7 @@ class Sintactico(sly.Parser):
     
     @_('EXTENDS lista_variables ";"')
     def sentencia_extends(self, p):
-        self.estructuras_detectadas.append(f"En linea: {p.lineno}EXTENDS {p.lista_variables}")
+        self.estructuras_detectadas.append(f"En linea {p.lineno}: EXTENDS {p.lista_variables}")
         return ('EXTENDS',p.lista_variables)
 
     @_('EXTENDS lista_variables error')
@@ -778,7 +790,7 @@ class Sintactico(sly.Parser):
     @_('TOSF "(" expresion ")"')
     def sentencia_conv(self, p):
         self.estructuras_detectadas.append(
-            f"En linea:{p.lineno}, conversion TOSF"
+            f"En linea {p.lineno}: conversion TOSF"
         )
         return (
             'TOSF',
@@ -844,11 +856,16 @@ class Sintactico(sly.Parser):
         self.errores_sintacticos.append(
             f"Línea {p.lineno}: Error Sintáctico: Ausencia de valores para la enumeración '{p.ID}'."
         )
-        self.tabla_de_simbolos[p.ID] = {
+        if p.ID not in self.tabla_de_simbolos:
+            self.tabla_de_simbolos[p.ID] = {}
+        
+        self.tabla_de_simbolos[p.ID].update({
             'tipo': 'TYPEDEF',
-            'valores': []
-        }
+            'valores': [],
+            'declarada': True
+        })
         return ('TYPEDEF', p.ID, [])
+    
     #Error: falta FROM en IMPORT
     @_('CLASS ID IMPORT lista_variables BEGIN cuerpo_clase END ";"')
     def sentencia_clase(self, p):
@@ -856,6 +873,7 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Ausencia de 'FROM' en la declaración IMPORT de la clase '{p.ID}'."
         )
         return ('CLASE_IMPORT', p.ID, p.lista_variables, p.cuerpo_clase)
+    
     #Error: falta TO en EXPORT
     # Atributo
     @_('tipo ID EXPORT lista_variables ";"')
@@ -864,6 +882,7 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Ausencia de 'TO' en la declaración EXPORT del atributo '{p.ID}'."
         )
         return ('ATRIBUTO_EXPORT', p.tipo, p.ID, p.lista_variables)
+    
     #Metodo
     @_('tipo ID "(" parametros_formales ")" bloque_delimitado EXPORT lista_variables ";"')
     def metodo_clase(self, p):
@@ -871,6 +890,7 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Ausencia de 'TO' en la declaración EXPORT del método '{p.ID}'."
         )
         return ('METODO_EXPORT', p.tipo, p.ID, p.parametros_formales, p.bloque_delimitado, p.lista_variables)
+    
     #Ausencia de nombre o lista de clases despues de extends
     @_('EXTENDS ";"')
     def sentencia_extends(self, p):
@@ -886,5 +906,3 @@ class Sintactico(sly.Parser):
             f"Línea {p.lineno}: Error Sintáctico: Ausencia de nombre o lista de clases después de 'EXTENDS'."
         )
         return ('EXTENDS', [])
-    
-    

@@ -55,7 +55,7 @@ BEGIN
     aux_entero := contador + 10$l * 2$l;
 
     // Tema 17: Asignación dentro de expresión con '=' y delimitada por paréntesis
-    aux_entero := contador = (5$l + 3$l);
+    aux_entero := contador = (5$l - -3$l);
 
     // Salida por pantalla
     POUT("Iniciando ejecucion de pruebas validas");
