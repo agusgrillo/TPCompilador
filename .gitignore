@@ -2,3 +2,4 @@ entornoCompi/
 __pycache__/
 Testeos/
 parser.out
+venv/
