@@ -259,15 +259,16 @@ class Sintactico(sly.Parser):
        'referencia ASIGN_IGUAL expresion')
     def asignacion(self,p):
         if p[1] == ':=':
-            self.estructuras_detectadas.append(f"Línea {p.lineno}:Asignación ':=' sobre {p.referencia}")
+            self.estructuras_detectadas.append(f"Línea {p.lineno}: Asignación ':=' sobre {p.referencia}")
         elif p[1] == '=':
-            self.estructuras_detectadas.append(f"Línea {p.lineno}:Asignación '=' sobre {p.referencia}")
+            self.estructuras_detectadas.append(f"Línea {p.lineno}: Asignación '=' sobre {p.referencia}")
         if isinstance(p.referencia, str):
             info = self.tabla_de_simbolos.get(p.referencia, {})
             if info.get('declarada') != True:
                 self.errores_sintacticos.append(f"Línea {p.lineno}: Error Semántico: Variable '{p.referencia}' no declarada.")
             else:
-                self.tabla_de_simbolos[p.referencia]['valor'] = p.expresion
+                if not isinstance(p.expresion, tuple):
+                    self.tabla_de_simbolos[p.referencia]['valor'] = p.expresion
                 
         return('ASIGNACION', p.referencia, p.expresion)
 
@@ -455,7 +456,7 @@ class Sintactico(sly.Parser):
     #IF-ELSE
     @_('IF "(" condicion ")" bloque_control ELSE bloque_control END_IF ";"')
     def sentencia_if (self,p):
-        self.estructuras_detectadas.append(f"Línea {p.lineno}:Estructura IF-ELSE")
+        self.estructuras_detectadas.append(f"Línea {p.lineno}: Estructura IF-ELSE")
         return ('IF-ELSE', p.condicion, p.bloque_control0, p.bloque_control1)
     
     #IF-ELSE sin ";"
@@ -620,14 +621,14 @@ class Sintactico(sly.Parser):
     @_('POUT "(" STRINGM ")"')
     def salida(self, p):
         self.estructuras_detectadas.append(
-            f"En linea: {p.lineno} Salida POUT"
+            f"En linea {p.lineno}: Salida POUT"
         )
         return ('POUT_STRING', p.STRINGM)
 
     @_('POUT "(" expresion ")"')
     def salida(self, p):
         self.estructuras_detectadas.append(
-            f"En linea: {p.lineno} Salida POUT"
+            f"En linea {p.lineno}: Salida POUT"
         )
         return ('POUT', p.expresion)
 
@@ -732,7 +733,7 @@ class Sintactico(sly.Parser):
     #metodos
     @_('tipo ID "(" parametros_formales ")" bloque_delimitado ";"')
     def metodo_clase (self, p):
-        self.estructuras_detectadas.append(f"En linea: {p.lineno}. Metodo '{p.ID}'")
+        self.estructuras_detectadas.append(f"En linea {p.lineno}: Metodo '{p.ID}'")
         return(
             'METODO',
             p.tipo,
@@ -751,7 +752,7 @@ class Sintactico(sly.Parser):
     @_('tipo ID "(" parametros_formales ")" bloque_delimitado EXPORT TO lista_variables ";"')
     def metodo_clase(self, p):
 
-        self.estructuras_detectadas.append(f"En linea: {p.lineno} Metodo exportado '{p.ID}'")
+        self.estructuras_detectadas.append(f"En linea {p.lineno}: Metodo exportado '{p.ID}'")
         return (
             'METODO_EXPORT',
             p.tipo,
@@ -777,7 +778,7 @@ class Sintactico(sly.Parser):
     
     @_('EXTENDS lista_variables ";"')
     def sentencia_extends(self, p):
-        self.estructuras_detectadas.append(f"En linea: {p.lineno}EXTENDS {p.lista_variables}")
+        self.estructuras_detectadas.append(f"En linea {p.lineno}: EXTENDS {p.lista_variables}")
         return ('EXTENDS',p.lista_variables)
 
     @_('EXTENDS lista_variables error')
@@ -790,7 +791,7 @@ class Sintactico(sly.Parser):
     @_('TOSF "(" expresion ")"')
     def sentencia_conv(self, p):
         self.estructuras_detectadas.append(
-            f"En linea:{p.lineno}, conversion TOSF"
+            f"En linea {p.lineno}: conversion TOSF"
         )
         return (
             'TOSF',
