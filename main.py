@@ -26,6 +26,9 @@ if __name__ == '__main__':
     # 4. Analizar léxicamente y guardar los tokens en una lista para no consumirlos[cite: 13]
     lista_tokens = list(lexer.tokenize(data))
 
+    # 4.5 Para que compartan la misma tabla de simbolos 
+    sintax.tabla_de_simbolos = lexer.tabla_simbolos
+
     # 5. Ejecutar el análisis sintáctico pasándole el iterador de los tokens[cite: 13]
     sintax.parse(iter(lista_tokens))
 
