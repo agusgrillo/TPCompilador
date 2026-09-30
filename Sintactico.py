@@ -337,7 +337,7 @@ class Sintactico(sly.Parser):
     
     @_('MENOS factor %prec UMINUS')
     def factor(self, p):
-        return ('NEGATIVO',-p[1])
+        return ('NEGATIVO',p[1])
 
 
     @_('ID ASIGN_IGUAL "(" expresion_estricta ")"')
@@ -388,7 +388,7 @@ class Sintactico(sly.Parser):
 
     @_('MENOS factor_estricto %prec UMINUS')
     def factor_estricto(self, p):
-        return ('NEGATIVO',-p[1])
+        return ('NEGATIVO',p[1])
 
     @_('NUMBER')
     def numero(self, p):
