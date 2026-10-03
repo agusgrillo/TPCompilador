@@ -1,0 +1,11 @@
+mi_programa_error
+
+LONGINT variable_entera, contador;
+
+BEGIN
+    contador := 0$l;
+    
+    // ERROR: Falta operador en la expresión (ej: falta el '+')
+    variable_entera := contador 5$l;
+    
+END

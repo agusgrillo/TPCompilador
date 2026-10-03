@@ -1,0 +1,7 @@
+mi_programa
+LONGINT a;
+
+BEGIN
+    a := 25$l;
+    POUT("Ejecutando sin END final");
+// Falta END al llegar al fin de archivo

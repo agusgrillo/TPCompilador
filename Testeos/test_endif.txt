@@ -1,0 +1,26 @@
+mi_programa_endif
+
+LONGINT contador;
+
+BEGIN
+    contador := 0$l;
+
+    // ERROR 1: Falta END_IF en un IF simple
+    IF (contador == 0$l)
+    BEGIN
+        POUT("Es cero");
+    END
+    ; 
+
+    // ERROR 2: Falta END_IF en un IF-ELSE
+    IF (contador == 1$l)
+    BEGIN
+        POUT("Es uno");
+    END
+    ELSE
+    BEGIN
+        POUT("No es uno");
+    END
+    ;
+
+END

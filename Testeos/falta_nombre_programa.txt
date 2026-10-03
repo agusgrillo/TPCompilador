@@ -1,0 +1,5 @@
+// Falta el nombre del programa (ej: "mi_programa") al principio
+LONGINT a, b;
+BEGIN
+    a := 10$l;
+END

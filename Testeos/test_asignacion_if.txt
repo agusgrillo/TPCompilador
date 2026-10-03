@@ -1,0 +1,19 @@
+programa_prueba_if
+
+LONGINT a, b;
+
+BEGIN
+    // Caso 1: Válido. Asignación correcta dentro de la condición usando '=' y paréntesis
+    IF ( a = (5$l) == 5$l )
+    BEGIN
+        POUT("Asignacion valida");
+    END
+    END_IF;
+
+    // Caso 2: Error. Uso de ':=' donde debe usarse '=' dentro de la expresión
+    IF ( b := (10$l) == 10$l )
+    BEGIN
+        POUT("Asignacion invalida");
+    END
+    END_IF;
+END

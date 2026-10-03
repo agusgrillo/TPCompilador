@@ -1,0 +1,7 @@
+mi_programa
+LONGINT a;
+
+// Falta BEGIN antes de las ejecutables
+    a := 10$l;
+    POUT("Ejecutando sin BEGIN");
+END

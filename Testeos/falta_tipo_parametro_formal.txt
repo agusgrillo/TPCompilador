@@ -1,0 +1,22 @@
+mi_programa
+LONGINT control;
+
+// 1. Falta tipo en el único parámetro (aparece solo 'parametro_uno')
+SINGLEF FUNCTION calcular(parametro_uno)
+    SINGLEF temp;
+BEGIN
+    temp := 1.0;
+    RET(temp);
+END;
+
+// 2. Falta tipo en el segundo parámetro (aparece solo 'parametro_dos' tras la coma)
+SINGLEF FUNCTION sumar(LONGINT parametro_a, parametro_dos)
+    SINGLEF temp;
+BEGIN
+    temp := 2.0;
+    RET(temp);
+END;
+
+BEGIN
+    POUT("Fin de la prueba");
+END

@@ -1,0 +1,14 @@
+mi_programa
+LONGINT a, b, c;
+
+BEGIN
+    // 1. Falta operando luego del operador suma '+'
+    a := 10$l + ;
+
+    // 2. Falta operando luego del operador multiplicación '*'
+    b := a * ;
+
+    // 3. Expresión correcta posterior para verificar recuperación
+    c := 5$l + 2$l * 3$l;
+    POUT("Fin de la prueba");
+END

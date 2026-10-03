@@ -1,0 +1,14 @@
+mi_programa
+
+// 1. Falta coma entre dos variables simples
+LONGINT a b
+
+// 2. Falta coma en una lista de varias variables
+SINGLEF x, y z, w;
+
+BEGIN
+    a := 10$l;
+    b := 20$l;
+    x := 1.5;
+    POUT("Prueba de comas finalizada");
+END

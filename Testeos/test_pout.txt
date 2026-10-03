@@ -1,0 +1,12 @@
+mi_programa_pout
+
+LONGINT var_entera;
+
+BEGIN
+    var_entera := 10$l;
+    
+    // ERROR: Falta argumento en POUT
+    POUT();
+    
+    var_entera := var_entera + 1$l;
+END

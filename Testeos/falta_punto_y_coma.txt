@@ -1,0 +1,72 @@
+prueba_puntos_y_coma
+
+// Declaraciones
+LONGINT a, b
+SINGLEF correcto;
+TYPEDEF colores = [1$l, 2$l]
+colores color
+
+// Funcion sin ';' final y retorno sin ';'
+LONGINT FUNCTION calcular(LONGINT entrada) LONGINT interno;
+BEGIN
+    RET(entrada)
+END
+
+// Clase sin ';' final
+CLASS caja BEGIN
+    LONGINT dato;
+END
+
+// Atributo sin ';'
+CLASS atributos BEGIN
+    LONGINT atributo
+END;
+
+// Metodo sin ';'
+CLASS metodos BEGIN
+    LONGINT ejecutar(LONGINT valor) BEGIN
+        RET(valor);
+    END
+END;
+
+// EXTENDS sin ';'
+CLASS hija IMPORT FROM caja BEGIN
+    EXTENDS caja
+    LONGINT dato;
+END;
+
+BEGIN
+    // Asignacion sin ';'
+    a := 10$l
+
+    // Salida sin ';'
+    POUT("Salida sin punto y coma")
+
+    // Conversion sin ';'
+    TOSF(a)
+
+    // Llamada a funcion sin ';'
+    calcular(a)
+
+    // Retorno sin ';'
+    RET(a)
+
+    // REPEAT sin ';'
+    REPEAT BEGIN
+        POUT("REPEAT sin punto y coma");
+    END UNTIL (a == 0$l)
+
+    // IF sin ';'
+    IF (a > 0$l) BEGIN
+        POUT("IF sin punto y coma");
+    END_IF
+
+    // IF-ELSE sin ';'
+    IF (a == 0$l) BEGIN
+        POUT("IF verdadero");
+    END_IF ELSE BEGIN
+        POUT("IF falso");
+    END_IF
+
+    b := 20$l;
+END

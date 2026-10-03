@@ -1,0 +1,12 @@
+mi_programa_iteraciones
+
+LONGINT contador;
+
+BEGIN
+    contador := 0$l;
+
+    // ERROR: Falta cuerpo en la iteración
+    REPEAT
+    UNTIL (contador == 10$l) ;
+
+END

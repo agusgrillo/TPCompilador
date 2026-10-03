@@ -1,0 +1,22 @@
+mi_programa_parentesis
+
+LONGINT contador;
+
+BEGIN
+    contador := 0$l;
+
+    // ERROR 1: Falta paréntesis de apertura en IF
+    IF contador == 5$l )
+    BEGIN
+        POUT("Es 5");
+    END
+    END_IF;
+
+    // ERROR 2: Falta paréntesis de cierre en REPEAT
+    REPEAT
+    BEGIN
+        contador := contador + 1$l;
+    END
+    UNTIL ( contador == 10$l ;
+
+END

@@ -1,0 +1,22 @@
+mi_programa
+LONGINT control;
+
+// 1. Error: Falta el nombre del único parámetro
+SINGLEF FUNCTION calcular(LONGINT)
+    SINGLEF temp;
+BEGIN
+    temp := 1.0;
+    RET(temp);
+END;
+
+// 2. Error: Falta el nombre del segundo parámetro
+SINGLEF FUNCTION sumar(LONGINT a, SINGLEF)
+    SINGLEF temp;
+BEGIN
+    temp := 2.0;
+    RET(temp);
+END;
+
+BEGIN
+    POUT("Fin del bloque main");
+END

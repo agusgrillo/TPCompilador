@@ -1,0 +1,11 @@
+mi_programa
+
+LONGINT FUNCTION (LONGINT entrada)
+LONGINT interno;
+BEGIN
+    RET(entrada);
+END;
+
+BEGIN
+    POUT("Programa principal");
+END
